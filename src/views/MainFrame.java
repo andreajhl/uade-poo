@@ -1,6 +1,7 @@
 package views;
 
 import views.products.ProductFrame;
+import views.suppliers.SupplierFrame;
 
 import javax.swing.*;
 
@@ -16,6 +17,7 @@ public class MainFrame extends JFrame {
 
     private void initTabs() {
         JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Proveedores", new SupplierFrame());
         tabs.addTab("Productos", new ProductFrame());
         add(tabs);
     }

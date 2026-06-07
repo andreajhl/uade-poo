@@ -8,11 +8,12 @@ import exceptions.EntityNotFoundException;
 import models.Product;
 import models.PurchaseOrderDetail;
 import models.Supplier;
+import views.components.AppTable;
+import views.components.ButtonBar;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +26,7 @@ public class CreatePurchaseOrderDialog extends JDialog {
     private JTextField txtQuantity;
     private JLabel lblUnitPrice;
     private JLabel lblItemSubtotal;
-    private JTable detailTable;
-    private DefaultTableModel detailModel;
+    private AppTable detailTable;
     private List<PurchaseOrderDetail> details;
     private JLabel lblTotal;
 
@@ -48,15 +48,15 @@ public class CreatePurchaseOrderDialog extends JDialog {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.setBorder(BorderFactory.createTitledBorder("Proveedor"));
         cmbSupplier = new JComboBox<>();
-
-        for (Supplier s : SupplierController.getInstance().findAll())  cmbSupplier.addItem(s);
-
+        
+        for (Supplier s : SupplierController.getInstance().findAll()) cmbSupplier.addItem(s);
+        
         cmbSupplier.setPreferredSize(new Dimension(300, 25));
         cmbSupplier.addActionListener(e -> refreshUnitPrice());
 
         panel.add(new JLabel("Proveedor:"));
         panel.add(cmbSupplier);
-
+       
         add(panel, BorderLayout.NORTH);
     }
 
@@ -83,11 +83,7 @@ public class CreatePurchaseOrderDialog extends JDialog {
             public void changedUpdate(DocumentEvent e) { refreshItemSubtotal(); }
         });
 
-        JButton btnAdd = new JButton("Agregar ítem");
-        btnAdd.setBackground(new Color(70, 130, 180));
-        btnAdd.setForeground(Color.WHITE);
-        btnAdd.setFocusPainted(false);
-        btnAdd.addActionListener(e -> addDetail());
+        JButton btnAdd = ButtonBar.primary("Agregar ítem", this::addDetail);
 
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
         panel.add(new JLabel("Producto:"), gbc);
@@ -117,11 +113,7 @@ public class CreatePurchaseOrderDialog extends JDialog {
     }
 
     private void initDetailTable() {
-        String[] cols = {"Producto", "Cantidad", "Precio Unit.", "Subtotal"};
-        detailModel = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int r, int c) { return false; }
-        };
-        detailTable = new JTable(detailModel);
+        detailTable = new AppTable(new String[]{"Producto", "Cantidad", "Precio Unit.", "Subtotal"});
 
         JPanel tablePanel = new JPanel(new BorderLayout(5, 5));
         tablePanel.setBorder(BorderFactory.createTitledBorder("Ítems agregados"));
@@ -129,39 +121,27 @@ public class CreatePurchaseOrderDialog extends JDialog {
         lblTotal = new JLabel("Total OC: $ 0.00");
         lblTotal.setFont(lblTotal.getFont().deriveFont(Font.BOLD, 13f));
 
-        JButton btnRemove = new JButton("Quitar seleccionado");
-        btnRemove.addActionListener(e -> removeSelected());
-
         JPanel bottomRow = new JPanel(new BorderLayout());
-        bottomRow.add(btnRemove, BorderLayout.WEST);
+        bottomRow.add(ButtonBar.danger("Quitar seleccionado", this::removeSelected), BorderLayout.WEST);
         bottomRow.add(lblTotal, BorderLayout.EAST);
 
-        tablePanel.add(new JScrollPane(detailTable), BorderLayout.CENTER);
+        tablePanel.add(detailTable, BorderLayout.CENTER);
         tablePanel.add(bottomRow, BorderLayout.SOUTH);
 
         add(tablePanel, BorderLayout.SOUTH);
     }
 
     private void initButtons() {
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnConfirm = new JButton("Confirmar Orden");
-        JButton btnCancel = new JButton("Cancelar");
-
-        btnConfirm.addActionListener(e -> confirm());
-        btnCancel.addActionListener(e -> dispose());
-
-        buttons.add(btnCancel);
-        buttons.add(btnConfirm);
-
-        getContentPane().add(buttons, BorderLayout.SOUTH);
+        ButtonBar bar = new ButtonBar();
+        bar.addButton("Cancelar", this::dispose);
+        bar.addButton("Confirmar Orden", this::confirm);
+        getContentPane().add(bar, BorderLayout.SOUTH);
     }
 
     private void refreshUnitPrice() {
         Supplier supplier = (Supplier) cmbSupplier.getSelectedItem();
         Product product = (Product) cmbProduct.getSelectedItem();
-        if (supplier == null || product == null) currentUnitPrice = 0f;
-        else currentUnitPrice = product.getPriceForSupplier(supplier.getId());
-
+        currentUnitPrice = (supplier == null || product == null) ? 0f : product.getPriceForSupplier(supplier.getId());
         lblUnitPrice.setText(String.format("$ %.2f", currentUnitPrice));
         refreshItemSubtotal();
     }
@@ -197,7 +177,7 @@ public class CreatePurchaseOrderDialog extends JDialog {
 
         PurchaseOrderDetail detail = new PurchaseOrderDetail(product, quantity, currentUnitPrice);
         details.add(detail);
-        detailModel.addRow(new Object[]{
+        detailTable.addRow(new Object[]{
             product.getDescription(),
             quantity,
             String.format("$ %.2f", currentUnitPrice),
@@ -209,11 +189,11 @@ public class CreatePurchaseOrderDialog extends JDialog {
 
     private void removeSelected() {
         int row = detailTable.getSelectedRow();
-
+        
         if (row < 0) return;
-
+        
         details.remove(row);
-        detailModel.removeRow(row);
+        detailTable.removeRow(row);
         
         refreshOrderTotal();
     }
@@ -235,10 +215,8 @@ public class CreatePurchaseOrderDialog extends JDialog {
             return;
         }
 
-        UUID dummyUserId = UUID.randomUUID();
-
         try {
-            PurchaseOrderController.getInstance().createPurchaseOrder(supplier.getId(), details, dummyUserId);
+            PurchaseOrderController.getInstance().createPurchaseOrder(supplier.getId(), details, UUID.randomUUID());
             JOptionPane.showMessageDialog(this, "Orden de compra creada correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } catch (CreditLimitExceededException ex) {

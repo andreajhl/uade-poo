@@ -2,6 +2,8 @@ package views.products;
 
 import controllers.ProductController;
 import models.Category;
+import views.components.ButtonBar;
+import views.components.FormPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,59 +18,35 @@ public class CreateProductDialog extends JDialog {
 
     public CreateProductDialog(JFrame parent) {
         super(parent, "Nuevo Producto", true);
-
         setSize(400, 300);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
-
         initForm();
         initButtons();
     }
 
     private void initForm() {
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
         txtCode = new JTextField();
         txtDescription = new JTextField();
         txtUnitOfMeasure = new JTextField();
         txtIvaRate = new JTextField("21");
         txtCategory = new JTextField();
 
-        Object[][] rows = {
-            {"Código *", txtCode},
-            {"Descripción *", txtDescription},
-            {"Unidad de Medida *", txtUnitOfMeasure},
-            {"IVA % *", txtIvaRate},
-            {"Rubro *", txtCategory}
-        };
-
-        for (int i = 0; i < rows.length; i++) {
-            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0.35;
-            form.add(new JLabel((String) rows[i][0]), gbc);
-
-            gbc.gridx = 1; gbc.weightx = 0.65;
-            form.add((Component) rows[i][1], gbc);
-        }
+        FormPanel form = new FormPanel();
+        form.addRow("Código *", txtCode);
+        form.addRow("Descripción *", txtDescription);
+        form.addRow("Unidad de Medida *", txtUnitOfMeasure);
+        form.addRow("IVA % *", txtIvaRate);
+        form.addRow("Rubro *", txtCategory);
 
         add(form, BorderLayout.CENTER);
     }
 
     private void initButtons() {
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new JButton("Guardar");
-        JButton btnCancel = new JButton("Cancelar");
-
-        btnSave.addActionListener(e -> save());
-        btnCancel.addActionListener(e -> dispose());
-
-        buttons.add(btnCancel);
-        buttons.add(btnSave);
-        
-        add(buttons, BorderLayout.SOUTH);
+        ButtonBar bar = new ButtonBar();
+        bar.addButton("Cancelar", this::dispose);
+        bar.addButton("Guardar", this::save);
+        add(bar, BorderLayout.SOUTH);
     }
 
     private void save() {
@@ -92,9 +70,7 @@ public class CreateProductDialog extends JDialog {
             return;
         }
 
-        Category category = new Category(categoryName);
-        ProductController.getInstance().create(code, description, unitOfMeasure, ivaRate, category);
-
+        ProductController.getInstance().create(code, description, unitOfMeasure, ivaRate, new Category(categoryName));
         JOptionPane.showMessageDialog(this, "Producto creado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
         dispose();
     }

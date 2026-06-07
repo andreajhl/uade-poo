@@ -2,39 +2,28 @@ package views.suppliers;
 
 import controllers.SupplierController;
 import models.Supplier;
+import views.components.AppTable;
+import views.components.ButtonBar;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
 public class SupplierFrame extends JPanel {
 
-    private JTable table;
-    private DefaultTableModel tableModel;
+    private final AppTable table;
 
     public SupplierFrame() {
         setLayout(new BorderLayout());
-        initTable();
+        table = new AppTable(new String[]{"CUIT", "Razón Social", "Nombre Fantasía", "Condición IVA", "Tope Crédito"});
         initToolbar();
+        add(table, BorderLayout.CENTER);
         refresh();
-    }
-
-    private void initTable() {
-        String[] columns = {"CUIT", "Razón Social", "Nombre Fantasía", "Condición IVA", "Tope Crédito"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            public boolean isCellEditable(int row, int col) { return false; }
-        };
-        table = new JTable(tableModel);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
     private void initToolbar() {
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton btnNew = new JButton("Nuevo Proveedor");
-        btnNew.addActionListener(e -> openCreateDialog());
-        toolbar.add(btnNew);
+        toolbar.add(ButtonBar.primary("Nuevo Proveedor", this::openCreateDialog));
         add(toolbar, BorderLayout.NORTH);
     }
 
@@ -45,10 +34,10 @@ public class SupplierFrame extends JPanel {
     }
 
     public void refresh() {
-        tableModel.setRowCount(0);
+        table.clearRows();
         List<Supplier> suppliers = SupplierController.getInstance().findAll();
         for (Supplier s : suppliers) {
-            tableModel.addRow(new Object[]{
+            table.addRow(new Object[]{
                 s.getCuit(),
                 s.getRazonSocial(),
                 s.getFantasyName(),

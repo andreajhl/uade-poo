@@ -2,39 +2,28 @@ package views.products;
 
 import controllers.ProductController;
 import models.Product;
+import views.components.AppTable;
+import views.components.ButtonBar;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
 public class ProductFrame extends JPanel {
 
-    private JTable table;
-    private DefaultTableModel tableModel;
+    private final AppTable table;
 
     public ProductFrame() {
         setLayout(new BorderLayout());
-        initTable();
+        table = new AppTable(new String[]{"Código", "Descripción", "UDM", "IVA %", "Rubro"});
         initToolbar();
+        add(table, BorderLayout.CENTER);
         refresh();
-    }
-
-    private void initTable() {
-        String[] columns = {"Código", "Descripción", "UDM", "IVA %", "Rubro"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            public boolean isCellEditable(int row, int col) { return false; }
-        };
-        table = new JTable(tableModel);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
     private void initToolbar() {
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton btnNew = new JButton("Nuevo Producto");
-        btnNew.addActionListener(e -> openCreateDialog());
-        toolbar.add(btnNew);
+        toolbar.add(ButtonBar.primary("Nuevo Producto", this::openCreateDialog));
         add(toolbar, BorderLayout.NORTH);
     }
 
@@ -45,10 +34,10 @@ public class ProductFrame extends JPanel {
     }
 
     public void refresh() {
-        tableModel.setRowCount(0);
+        table.clearRows();
         List<Product> products = ProductController.getInstance().findAll();
         for (Product p : products) {
-            tableModel.addRow(new Object[]{
+            table.addRow(new Object[]{
                 p.getCode(),
                 p.getDescription(),
                 p.getUnitOfMeasure(),

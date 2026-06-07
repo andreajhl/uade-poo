@@ -2,6 +2,8 @@ package views.suppliers;
 
 import controllers.SupplierController;
 import models.enums.IVACondition;
+import views.components.ButtonBar;
+import views.components.FormPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,61 +35,38 @@ public class CreateSupplierDialog extends JDialog {
     }
 
     private void initForm() {
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
         txtCuit = new JTextField();
         txtRazonSocial = new JTextField();
         txtFantasyName = new JTextField();
         txtAddress = new JTextField();
         txtPhone = new JTextField();
         txtEmail = new JTextField();
+        cmbIvaCondition = new JComboBox<>(IVACondition.values());
         txtIngresosBrutos = new JTextField();
         txtActivityStartDate = new JTextField();
-
-        cmbIvaCondition = new JComboBox<>(IVACondition.values());
         applyPlaceholder(txtActivityStartDate, "yyyy-MM-dd");
         txtCreditLimit = new JTextField("0");
 
-        Object[][] rows = {
-            {"CUIT *", txtCuit},
-            {"Razón Social *", txtRazonSocial},
-            {"Nombre Fantasía *", txtFantasyName},
-            {"Domicilio *", txtAddress},
-            {"Teléfono *", txtPhone},
-            {"Email", txtEmail},
-            {"Condición IVA *", cmbIvaCondition},
-            {"Ingresos Brutos *", txtIngresosBrutos},
-            {"Inicio Actividades *", txtActivityStartDate},
-            {"Tope Crédito *", txtCreditLimit}
-        };
-
-        for (int i = 0; i < rows.length; i++) {
-            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0.3;
-            form.add(new JLabel((String) rows[i][0]), gbc);
-
-            gbc.gridx = 1; gbc.weightx = 0.7;
-            form.add((Component) rows[i][1], gbc);
-        }
+        FormPanel form = new FormPanel();
+        form.addRow("CUIT *", txtCuit);
+        form.addRow("Razón Social *", txtRazonSocial);
+        form.addRow("Nombre Fantasía *", txtFantasyName);
+        form.addRow("Domicilio *", txtAddress);
+        form.addRow("Teléfono *", txtPhone);
+        form.addRow("Email", txtEmail);
+        form.addRow("Condición IVA *", cmbIvaCondition);
+        form.addRow("Ingresos Brutos *", txtIngresosBrutos);
+        form.addRow("Inicio Actividades *", txtActivityStartDate);
+        form.addRow("Tope Crédito *", txtCreditLimit);
 
         add(new JScrollPane(form), BorderLayout.CENTER);
     }
 
     private void initButtons() {
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new JButton("Guardar");
-        JButton btnCancel = new JButton("Cancelar");
-
-        btnSave.addActionListener(e -> save());
-        btnCancel.addActionListener(e -> dispose());
-
-        buttons.add(btnCancel);
-        buttons.add(btnSave);
-        
-        add(buttons, BorderLayout.SOUTH);
+        ButtonBar bar = new ButtonBar();
+        bar.addButton("Cancelar", this::dispose);
+        bar.addButton("Guardar", this::save);
+        add(bar, BorderLayout.SOUTH);
     }
 
     private void save() {

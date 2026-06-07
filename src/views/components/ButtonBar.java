@@ -1,0 +1,36 @@
+package views.components;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class ButtonBar extends JPanel {
+
+    public ButtonBar() {
+        setLayout(new FlowLayout(FlowLayout.RIGHT));
+    }
+
+    public JButton addButton(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.addActionListener(e -> action.run());
+        add(button);
+        return button;
+    }
+
+    public static JButton primary(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.setBackground(new Color(70, 130, 180));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.addActionListener(e -> action.run());
+        return button;
+    }
+
+    public static JButton danger(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.setBackground(new Color(200, 60, 60));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.addActionListener(e -> action.run());
+        return button;
+    }
+}

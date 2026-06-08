@@ -12,6 +12,8 @@ import models.Supplier;
 import models.User;
 import views.components.AppTable;
 import views.components.ButtonBar;
+import views.components.FormPanel;
+import views.components.InfoLabel;
 import views.components.SupervisorApprovalDialog;
 
 import javax.swing.*;
@@ -26,11 +28,11 @@ public class CreatePurchaseOrderDialog extends JDialog {
     private JComboBox<Supplier> cmbSupplier;
     private JComboBox<Product> cmbProduct;
     private JTextField txtQuantity;
-    private JLabel lblUnitPrice;
-    private JLabel lblItemSubtotal;
+    private InfoLabel lblUnitPrice;
+    private InfoLabel lblItemSubtotal;
+    private InfoLabel lblTotal;
     private AppTable detailTable;
     private List<PurchaseOrderDetail> details;
-    private JLabel lblTotal;
 
     private float currentUnitPrice = 0f;
 
@@ -47,37 +49,24 @@ public class CreatePurchaseOrderDialog extends JDialog {
     }
 
     private void initSupplierPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.setBorder(BorderFactory.createTitledBorder("Proveedor"));
         cmbSupplier = new JComboBox<>();
-
         for (Supplier s : SupplierController.getInstance().findAll()) cmbSupplier.addItem(s);
-
-        cmbSupplier.setPreferredSize(new Dimension(300, 25));
         cmbSupplier.addActionListener(e -> refreshUnitPrice());
 
-        panel.add(new JLabel("Proveedor:"));
-        panel.add(cmbSupplier);
+        FormPanel form = new FormPanel("Proveedor");
+        form.addRow("Proveedor:", cmbSupplier);
 
-        add(panel, BorderLayout.NORTH);
+        add(form, BorderLayout.NORTH);
     }
 
     private void initItemPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Agregar ítem"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 8, 5, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
         cmbProduct = new JComboBox<>();
         for (Product p : ProductController.getInstance().findAll()) cmbProduct.addItem(p);
         cmbProduct.addActionListener(e -> refreshUnitPrice());
 
-        txtQuantity = new JTextField("1", 6);
-        lblUnitPrice = new JLabel("$ 0.00");
-        lblUnitPrice.setFont(lblUnitPrice.getFont().deriveFont(Font.BOLD));
-        lblItemSubtotal = new JLabel("$ 0.00");
-        lblItemSubtotal.setFont(lblItemSubtotal.getFont().deriveFont(Font.BOLD));
+        txtQuantity = new JTextField("1");
+        lblUnitPrice = new InfoLabel("$ 0.00");
+        lblItemSubtotal = new InfoLabel("$ 0.00");
 
         txtQuantity.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { refreshItemSubtotal(); }
@@ -85,48 +74,27 @@ public class CreatePurchaseOrderDialog extends JDialog {
             public void changedUpdate(DocumentEvent e) { refreshItemSubtotal(); }
         });
 
-        JButton btnAdd = ButtonBar.primary("Agregar ítem", this::addDetail);
+        FormPanel form = new FormPanel("Agregar ítem");
+        form.addRow("Producto:", cmbProduct);
+        form.addRow("Cantidad:", txtQuantity);
+        form.addRow("Precio unitario:", lblUnitPrice);
+        form.addRow("Subtotal ítem:", lblItemSubtotal);
+        form.addFullRow(ButtonBar.primary("Agregar ítem", this::addDetail));
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
-        panel.add(new JLabel("Producto:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        panel.add(cmbProduct, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
-        panel.add(new JLabel("Cantidad:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 0;
-        panel.add(txtQuantity, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
-        panel.add(new JLabel("Precio unitario:"), gbc);
-        gbc.gridx = 1;
-        panel.add(lblUnitPrice, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0;
-        panel.add(new JLabel("Subtotal ítem:"), gbc);
-        gbc.gridx = 1;
-        panel.add(lblItemSubtotal, gbc);
-
-        gbc.gridx = 1; gbc.gridy = 4; gbc.anchor = GridBagConstraints.EAST;
-        panel.add(btnAdd, gbc);
-
-        add(panel, BorderLayout.CENTER);
+        add(form, BorderLayout.CENTER);
         refreshUnitPrice();
     }
 
     private void initDetailTable() {
         detailTable = new AppTable(new String[]{"Producto", "Cantidad", "Precio Unit.", "Subtotal"});
-
-        JPanel tablePanel = new JPanel(new BorderLayout(5, 5));
-        tablePanel.setBorder(BorderFactory.createTitledBorder("Ítems agregados"));
-
-        lblTotal = new JLabel("Total OC: $ 0.00");
-        lblTotal.setFont(lblTotal.getFont().deriveFont(Font.BOLD, 13f));
+        lblTotal = InfoLabel.highlight("Total OC: $ 0.00");
 
         JPanel bottomRow = new JPanel(new BorderLayout());
         bottomRow.add(ButtonBar.danger("Quitar seleccionado", this::removeSelected), BorderLayout.WEST);
         bottomRow.add(lblTotal, BorderLayout.EAST);
 
+        JPanel tablePanel = new JPanel(new BorderLayout(5, 5));
+        tablePanel.setBorder(BorderFactory.createTitledBorder("Ítems agregados"));
         tablePanel.add(detailTable, BorderLayout.CENTER);
         tablePanel.add(bottomRow, BorderLayout.SOUTH);
 
@@ -163,7 +131,6 @@ public class CreatePurchaseOrderDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "Seleccione un producto.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int quantity;
         try {
             quantity = Integer.parseInt(txtQuantity.getText().trim());
@@ -171,12 +138,10 @@ public class CreatePurchaseOrderDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "La cantidad debe ser un número entero.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         if (quantity <= 0) {
             JOptionPane.showMessageDialog(this, "La cantidad debe ser mayor a 0.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         PurchaseOrderDetail detail = new PurchaseOrderDetail(product, quantity, currentUnitPrice);
         details.add(detail);
         detailTable.addRow(new Object[]{

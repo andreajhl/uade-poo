@@ -3,6 +3,7 @@ package views.users;
 import controllers.UserController;
 import models.User;
 import views.components.ButtonBar;
+import views.components.FormPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,23 +27,15 @@ public class SelectUserDialog extends JDialog {
         List<User> users = UserController.getInstance().findAll();
         cmbUser = new JComboBox<>(users.toArray(new User[0]));
 
-        JPanel center = new JPanel(new GridBagLayout());
-        center.setBorder(BorderFactory.createEmptyBorder(16, 24, 8, 24));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        FormPanel form = new FormPanel();
+        form.addRow("Usuario:", cmbUser);
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
-        center.add(new JLabel("Usuario:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        center.add(cmbUser, gbc);
-
-        JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        south.add(ButtonBar.primary("Ingresar", this::confirm));
+        ButtonBar bar = ButtonBar.centered();
+        bar.addButton("Ingresar", this::confirm);
 
         setLayout(new BorderLayout());
-        add(center, BorderLayout.CENTER);
-        add(south, BorderLayout.SOUTH);
+        add(form, BorderLayout.CENTER);
+        add(bar, BorderLayout.SOUTH);
     }
 
     private void confirm() {

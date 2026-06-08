@@ -4,6 +4,7 @@ import controllers.UserController;
 import views.products.ProductFrame;
 import views.purchaseorders.PurchaseOrderFrame;
 import views.suppliers.SupplierFrame;
+import views.taxrules.TaxRuleFrame;
 import views.users.SelectUserDialog;
 
 import javax.swing.*;
@@ -47,6 +48,7 @@ public class MainFrame extends JFrame {
         tabs.addTab("Proveedores", new SupplierFrame());
         tabs.addTab("Productos", new ProductFrame());
         tabs.addTab("Órdenes de Compra", new PurchaseOrderFrame());
+        tabs.addTab("Reglas Impositivas", new TaxRuleFrame());
         add(tabs, BorderLayout.CENTER);
     }
 }

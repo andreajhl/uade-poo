@@ -3,13 +3,16 @@ package views.purchaseorders;
 import controllers.ProductController;
 import controllers.PurchaseOrderController;
 import controllers.SupplierController;
+import controllers.UserController;
 import exceptions.CreditLimitExceededException;
 import exceptions.EntityNotFoundException;
 import models.Product;
 import models.PurchaseOrderDetail;
 import models.Supplier;
+import models.User;
 import views.components.AppTable;
 import views.components.ButtonBar;
+import views.components.SupervisorApprovalDialog;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -17,7 +20,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class CreatePurchaseOrderDialog extends JDialog {
 
@@ -48,15 +50,15 @@ public class CreatePurchaseOrderDialog extends JDialog {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.setBorder(BorderFactory.createTitledBorder("Proveedor"));
         cmbSupplier = new JComboBox<>();
-        
+
         for (Supplier s : SupplierController.getInstance().findAll()) cmbSupplier.addItem(s);
-        
+
         cmbSupplier.setPreferredSize(new Dimension(300, 25));
         cmbSupplier.addActionListener(e -> refreshUnitPrice());
 
         panel.add(new JLabel("Proveedor:"));
         panel.add(cmbSupplier);
-       
+
         add(panel, BorderLayout.NORTH);
     }
 
@@ -189,12 +191,9 @@ public class CreatePurchaseOrderDialog extends JDialog {
 
     private void removeSelected() {
         int row = detailTable.getSelectedRow();
-        
         if (row < 0) return;
-        
         details.remove(row);
         detailTable.removeRow(row);
-        
         refreshOrderTotal();
     }
 
@@ -215,8 +214,10 @@ public class CreatePurchaseOrderDialog extends JDialog {
             return;
         }
 
+        User currentUser = UserController.getInstance().getCurrentUser();
+
         try {
-            PurchaseOrderController.getInstance().createPurchaseOrder(supplier.getId(), details, UUID.randomUUID());
+            PurchaseOrderController.getInstance().createPurchaseOrder(supplier.getId(), details, currentUser.getId());
             JOptionPane.showMessageDialog(this, "Orden de compra creada correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } catch (CreditLimitExceededException ex) {
@@ -224,8 +225,19 @@ public class CreatePurchaseOrderDialog extends JDialog {
                 ex.getMessage() + "\n\n¿Desea solicitar autorización de supervisor para continuar?",
                 "Tope de Crédito Excedido", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (option == JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(this, "Funcionalidad de autorización pendiente de implementación.",
-                        "Información", JOptionPane.INFORMATION_MESSAGE);
+                SupervisorApprovalDialog approvalDialog = new SupervisorApprovalDialog(
+                        (JFrame) getParent(), "Límite de crédito excedido");
+                approvalDialog.setVisible(true);
+                if (approvalDialog.isApproved()) {
+                    try {
+                        PurchaseOrderController.getInstance().createPurchaseOrderWithAuthorization(
+                                supplier.getId(), details, currentUser.getId(), approvalDialog.getAuthorization());
+                        JOptionPane.showMessageDialog(this, "Orden de compra creada con autorización.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } catch (EntityNotFoundException ex2) {
+                        JOptionPane.showMessageDialog(this, ex2.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             }
         } catch (EntityNotFoundException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);

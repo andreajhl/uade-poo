@@ -7,6 +7,10 @@ public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame();
+            if (!frame.requestLogin()) {
+                System.exit(0);
+            }
+            frame.init();
             frame.setVisible(true);
         });
     }

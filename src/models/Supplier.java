@@ -1,6 +1,7 @@
 package models;
 
 import models.enums.IVACondition;
+import models.enums.TaxType;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ public class Supplier {
     private LocalDate activityStartDate;
     private float creditLimit;
     private List<Category> categories;
+    private List<CertificationRetention> certifications;
 
     public Supplier(String cuit, String razonSocial, String fantasyName, String address,
                     String phone, String email, IVACondition ivaCondition,
@@ -37,6 +39,7 @@ public class Supplier {
         this.activityStartDate = activityStartDate;
         this.creditLimit = creditLimit;
         this.categories = new ArrayList<>();
+        this.certifications = new ArrayList<>();
     }
 
     public void addCategory(Category category) {
@@ -45,6 +48,17 @@ public class Supplier {
 
     public void removeCategory(Category category) {
         categories.remove(category);
+    }
+
+    public void addCertification(CertificationRetention certification) {
+        certifications.add(certification);
+    }
+
+    public boolean hasValidCertificationFor(TaxType taxType, LocalDate onDate) {
+        for (CertificationRetention c : certifications) {
+            if (c.getTaxType() == taxType && c.isValid(onDate)) return true;
+        }
+        return false;
     }
 
     public UUID getId() { return id; }
@@ -70,6 +84,8 @@ public class Supplier {
     public float getCreditLimit() { return creditLimit; }
 
     public List<Category> getCategories() { return categories; }
+
+    public List<CertificationRetention> getCertifications() { return certifications; }
 
     public void setCuit(String cuit) { this.cuit = cuit; }
 

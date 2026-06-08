@@ -2,9 +2,11 @@ package controllers;
 
 import exceptions.CreditLimitExceededException;
 import exceptions.EntityNotFoundException;
+import models.Authorization;
 import models.PurchaseOrder;
 import models.PurchaseOrderDetail;
 import models.Supplier;
+import models.enums.PurchaseOrderStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +25,7 @@ public class PurchaseOrderController {
     }
 
     public static PurchaseOrderController getInstance() {
-        if (instance == null)  instance = new PurchaseOrderController();
+        if (instance == null) instance = new PurchaseOrderController();
         return instance;
     }
 
@@ -37,14 +39,26 @@ public class PurchaseOrderController {
         validateCreditLimit(supplier, order);
 
         purchaseOrders.put(order.getId(), order);
+        return order;
+    }
 
+    public PurchaseOrder createPurchaseOrderWithAuthorization(UUID supplierId, List<PurchaseOrderDetail> details,
+            UUID userId, Authorization authorization) throws EntityNotFoundException {
+        Supplier supplier = SupplierController.getInstance().findById(supplierId);
+
+        PurchaseOrder order = new PurchaseOrder(nextOrderNumber++, supplier, userId);
+        for (PurchaseOrderDetail detail : details) order.addDetail(detail);
+
+        order.setAuthorization(authorization);
+        order.setStatus(PurchaseOrderStatus.AUTHORIZED);
+
+        purchaseOrders.put(order.getId(), order);
         return order;
     }
 
     public void validateCreditLimit(Supplier supplier, PurchaseOrder order)
             throws CreditLimitExceededException {
         float currentDebt = calculateOutstandingDebt(supplier.getId());
-
         if (currentDebt + order.getTotal() > supplier.getCreditLimit()) {
             throw new CreditLimitExceededException(currentDebt, order.getTotal(), supplier.getCreditLimit());
         }
@@ -55,7 +69,6 @@ public class PurchaseOrderController {
         for (PurchaseOrder order : purchaseOrders.values()) {
             if (order.getSupplier().getId().equals(supplierId)) debt += order.getTotal();
         }
-
         return debt;
     }
 
@@ -64,7 +77,6 @@ public class PurchaseOrderController {
         for (PurchaseOrder order : purchaseOrders.values()) {
             if (order.getSupplier().getId().equals(supplierId)) result.add(order);
         }
-
         return result;
     }
 

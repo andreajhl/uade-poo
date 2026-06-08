@@ -15,7 +15,7 @@ public class ProductFrame extends JPanel {
 
     public ProductFrame() {
         setLayout(new BorderLayout());
-        table = new AppTable(new String[]{"Código", "Descripción", "UDM", "IVA %", "Rubro"});
+        table = new AppTable(new String[]{"Código", "Descripción", "UDM", "Tipo IVA", "Rubro"});
         initToolbar();
         add(table, BorderLayout.CENTER);
         refresh();
@@ -40,8 +40,8 @@ public class ProductFrame extends JPanel {
             table.addRow(new Object[]{
                 p.getCode(),
                 p.getDescription(),
-                p.getUnitOfMeasure(),
-                String.format("%.1f%%", p.getIvaRate()),
+                p.getUnitOfMeasure().name(),
+                p.getTaxType().name(),
                 p.getCategory().getName()
             });
         }

@@ -3,7 +3,9 @@ package controllers;
 import exceptions.EntityNotFoundException;
 import models.Category;
 import models.Product;
-import models.ProductSupplierPrice;
+import models.ProductSupplier;
+import models.enums.TaxType;
+import models.enums.UnitOfMeasure;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,12 +26,10 @@ public class ProductController {
         return instance;
     }
 
-    public Product create(String code, String description, String unitOfMeasure,
-                          float ivaRate, Category category) {
-        Product product = new Product(code, description, unitOfMeasure, ivaRate, category);
-
+    public Product create(String code, String description, UnitOfMeasure unitOfMeasure,
+                          TaxType taxType, Category category) {
+        Product product = new Product(code, description, unitOfMeasure, taxType, category);
         products.put(product.getId(), product);
-
         return product;
     }
 
@@ -43,8 +43,9 @@ public class ProductController {
         return new ArrayList<>(products.values());
     }
 
-    public void setSupplierPrice(UUID productId, UUID supplierId, float price) throws EntityNotFoundException {
-        findById(productId).addSupplierPrice(new ProductSupplierPrice(supplierId, price));
+    public void setSupplierPrice(UUID productId, UUID supplierId, float price, Category category)
+            throws EntityNotFoundException {
+        findById(productId).addSupplierPrice(new ProductSupplier(supplierId, price, category));
     }
 
     public void delete(UUID id) throws EntityNotFoundException {

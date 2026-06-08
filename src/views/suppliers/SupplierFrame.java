@@ -12,18 +12,27 @@ import java.util.List;
 public class SupplierFrame extends JPanel {
 
     private final AppTable table;
+    private JButton btnManageCategories;
 
     public SupplierFrame() {
         setLayout(new BorderLayout());
         table = new AppTable(new String[]{"CUIT", "Razón Social", "Nombre Fantasía", "Condición IVA", "Tope Crédito"});
+        table.getTable().getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) btnManageCategories.setEnabled(table.getSelectedRow() >= 0);
+        });
         initToolbar();
         add(table, BorderLayout.CENTER);
         refresh();
     }
 
     private void initToolbar() {
+        btnManageCategories = new JButton("Gestionar Rubros");
+        btnManageCategories.setEnabled(false);
+        btnManageCategories.addActionListener(e -> openManageCategories());
+
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         toolbar.add(ButtonBar.primary("Nuevo Proveedor", this::openCreateDialog));
+        toolbar.add(btnManageCategories);
         add(toolbar, BorderLayout.NORTH);
     }
 
@@ -31,6 +40,17 @@ public class SupplierFrame extends JPanel {
         CreateSupplierDialog dialog = new CreateSupplierDialog((JFrame) SwingUtilities.getWindowAncestor(this));
         dialog.setVisible(true);
         refresh();
+    }
+
+    private void openManageCategories() {
+        int row = table.getSelectedRow();
+        if (row < 0) return;
+        List<Supplier> suppliers = SupplierController.getInstance().findAll();
+        if (row >= suppliers.size()) return;
+        Supplier supplier = suppliers.get(row);
+        ManageCategoriesDialog dialog = new ManageCategoriesDialog(
+                (JFrame) SwingUtilities.getWindowAncestor(this), supplier);
+        dialog.setVisible(true);
     }
 
     public void refresh() {

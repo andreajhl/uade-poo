@@ -2,6 +2,8 @@ package views.products;
 
 import controllers.ProductController;
 import models.Category;
+import models.enums.TaxType;
+import models.enums.UnitOfMeasure;
 import views.components.ButtonBar;
 import views.components.FormPanel;
 
@@ -12,8 +14,8 @@ public class CreateProductDialog extends JDialog {
 
     private JTextField txtCode;
     private JTextField txtDescription;
-    private JTextField txtUnitOfMeasure;
-    private JTextField txtIvaRate;
+    private JComboBox<UnitOfMeasure> cmbUnitOfMeasure;
+    private JComboBox<TaxType> cmbTaxType;
     private JTextField txtCategory;
 
     public CreateProductDialog(JFrame parent) {
@@ -28,15 +30,15 @@ public class CreateProductDialog extends JDialog {
     private void initForm() {
         txtCode = new JTextField();
         txtDescription = new JTextField();
-        txtUnitOfMeasure = new JTextField();
-        txtIvaRate = new JTextField("21");
+        cmbUnitOfMeasure = new JComboBox<>(UnitOfMeasure.values());
+        cmbTaxType = new JComboBox<>(TaxType.values());
         txtCategory = new JTextField();
 
         FormPanel form = new FormPanel();
         form.addRow("Código *", txtCode);
         form.addRow("Descripción *", txtDescription);
-        form.addRow("Unidad de Medida *", txtUnitOfMeasure);
-        form.addRow("IVA % *", txtIvaRate);
+        form.addRow("Unidad de Medida *", cmbUnitOfMeasure);
+        form.addRow("Tipo de IVA *", cmbTaxType);
         form.addRow("Rubro *", txtCategory);
 
         add(form, BorderLayout.CENTER);
@@ -52,25 +54,18 @@ public class CreateProductDialog extends JDialog {
     private void save() {
         String code = txtCode.getText().trim();
         String description = txtDescription.getText().trim();
-        String unitOfMeasure = txtUnitOfMeasure.getText().trim();
         String categoryName = txtCategory.getText().trim();
 
-        if (code.isEmpty() || description.isEmpty() || unitOfMeasure.isEmpty() || categoryName.isEmpty()) {
+        if (code.isEmpty() || description.isEmpty() || categoryName.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Complete todos los campos obligatorios (*).",
                     "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        float ivaRate;
-        try {
-            ivaRate = Float.parseFloat(txtIvaRate.getText().trim());
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "El IVA debe ser un número válido.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        UnitOfMeasure unitOfMeasure = (UnitOfMeasure) cmbUnitOfMeasure.getSelectedItem();
+        TaxType taxType = (TaxType) cmbTaxType.getSelectedItem();
 
-        ProductController.getInstance().create(code, description, unitOfMeasure, ivaRate, new Category(categoryName));
+        ProductController.getInstance().create(code, description, unitOfMeasure, taxType, new Category(categoryName));
         JOptionPane.showMessageDialog(this, "Producto creado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
         dispose();
     }

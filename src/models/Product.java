@@ -1,5 +1,8 @@
 package models;
 
+import models.enums.TaxType;
+import models.enums.UnitOfMeasure;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -9,31 +12,31 @@ public class Product {
     private UUID id;
     private String code;
     private String description;
-    private String unitOfMeasure;
-    private float ivaRate;
+    private UnitOfMeasure unitOfMeasure;
+    private TaxType taxType;
     private Category category;
-    private List<ProductSupplierPrice> supplierPrices;
+    private List<ProductSupplier> supplierPrices;
 
-    public Product(String code, String description, String unitOfMeasure,
-                   float ivaRate, Category category) {
+    public Product(String code, String description, UnitOfMeasure unitOfMeasure,
+                   TaxType taxType, Category category) {
         this.id = UUID.randomUUID();
         this.code = code;
         this.description = description;
         this.unitOfMeasure = unitOfMeasure;
-        this.ivaRate = ivaRate;
+        this.taxType = taxType;
         this.category = category;
         this.supplierPrices = new ArrayList<>();
     }
 
-    public void addSupplierPrice(ProductSupplierPrice price) {
+    public void addSupplierPrice(ProductSupplier price) {
         supplierPrices.removeIf(p -> p.getSupplierId().equals(price.getSupplierId()));
         supplierPrices.add(price);
     }
 
     public float getPriceForSupplier(UUID supplierId) {
-        for (ProductSupplierPrice p : supplierPrices) {
+        for (ProductSupplier p : supplierPrices) {
             if (p.getSupplierId().equals(supplierId)) {
-                return p.getUnitPrice();
+                return p.getAgreedUnitPrice();
             }
         }
         return 0f;
@@ -45,21 +48,21 @@ public class Product {
 
     public String getDescription() { return description; }
 
-    public String getUnitOfMeasure() { return unitOfMeasure; }
+    public UnitOfMeasure getUnitOfMeasure() { return unitOfMeasure; }
 
-    public float getIvaRate() { return ivaRate; }
+    public TaxType getTaxType() { return taxType; }
 
     public Category getCategory() { return category; }
 
-    public List<ProductSupplierPrice> getSupplierPrices() { return supplierPrices; }
+    public List<ProductSupplier> getSupplierPrices() { return supplierPrices; }
 
     public void setCode(String code) { this.code = code; }
 
     public void setDescription(String description) { this.description = description; }
 
-    public void setUnitOfMeasure(String unitOfMeasure) { this.unitOfMeasure = unitOfMeasure; }
+    public void setUnitOfMeasure(UnitOfMeasure unitOfMeasure) { this.unitOfMeasure = unitOfMeasure; }
 
-    public void setIvaRate(float ivaRate) { this.ivaRate = ivaRate; }
+    public void setTaxType(TaxType taxType) { this.taxType = taxType; }
 
     public void setCategory(Category category) { this.category = category; }
 

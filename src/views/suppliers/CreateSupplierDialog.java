@@ -68,16 +68,46 @@ public class CreateSupplierDialog extends AppDialog {
     }
 
     private void save() {
-        String cuit = txtCuit.getText().trim();
-        String razonSocial = txtRazonSocial.getText().trim();
-        String fantasyName = txtFantasyName.getText().trim();
-        String address = txtAddress.getText().trim();
-        String phone = txtPhone.getText().trim();
+        String cuit           = txtCuit.getText().trim();
+        String razonSocial    = txtRazonSocial.getText().trim();
+        String fantasyName    = txtFantasyName.getText().trim();
+        String address        = txtAddress.getText().trim();
+        String phone          = txtPhone.getText().trim();
+        String email          = txtEmail.getText().trim();
         String ingresosBrutos = txtIngresosBrutos.getText().trim();
 
         if (cuit.isEmpty() || razonSocial.isEmpty() || fantasyName.isEmpty()
                 || address.isEmpty() || phone.isEmpty() || ingresosBrutos.isEmpty()) {
             Alerts.warn(this, "Complete todos los campos obligatorios (*).");
+            return;
+        }
+
+        if (cuit.length() < 3 || !cuit.matches("^[0-9-]+$")) {
+            Alerts.warn(this, "El CUIT debe tener al menos 3 caracteres.");
+            return;
+        }
+        if (razonSocial.length() < 3) {
+            Alerts.warn(this, "La Razón Social debe tener al menos 3 caracteres.");
+            return;
+        }
+        if (fantasyName.length() < 3) {
+            Alerts.warn(this, "El Nombre Fantasía debe tener al menos 3 caracteres.");
+            return;
+        }
+        if (address.length() < 3) {
+            Alerts.warn(this, "El Domicilio debe tener al menos 3 caracteres.");
+            return;
+        }
+        if (!phone.matches("[0-9]+") || phone.length() < 11) {
+            Alerts.warn(this, "El Teléfono debe contener solo dígitos y tener al menos 11 caracteres.");
+            return;
+        }
+        if (!email.isEmpty() && !isValidEmail(email)) {
+            Alerts.warn(this, "El Email debe tener el formato test@gmail.com.");
+            return;
+        }
+        if (ingresosBrutos.length() < 3) {
+            Alerts.warn(this, "El número de Ingresos Brutos debe tener al menos 3 caracteres.");
             return;
         }
 
@@ -94,19 +124,27 @@ public class CreateSupplierDialog extends AppDialog {
         float creditLimit;
         try {
             creditLimit = Float.parseFloat(txtCreditLimit.getText().trim());
+            if (creditLimit < 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            Alerts.warn(this, "El tope de crédito debe ser un número válido.");
+            Alerts.warn(this, "El tope de crédito debe ser un número mayor o igual a 0.");
             return;
         }
 
         SupplierController.getInstance().create(
                 cuit, razonSocial, fantasyName, address, phone,
-                txtEmail.getText().trim(),
+                email,
                 cmbIvaCondition.getSelected(),
                 ingresosBrutos, activityStartDate, creditLimit
         );
 
         Alerts.info(this, "Proveedor creado correctamente.");
         dispose();
+    }
+
+    private boolean isValidEmail(String email) {
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 0) return false;
+        int dotIndex = email.lastIndexOf('.');
+        return dotIndex > atIndex + 1 && dotIndex < email.length() - 1;
     }
 }

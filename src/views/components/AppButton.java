@@ -17,7 +17,7 @@ public class AppButton extends JButton {
     public static AppButton primary(String text, Runnable action) {
         AppButton button = new AppButton(text, action);
         button.setBackground(new Color(70, 130, 180));
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.BLACK);
         button.setFocusPainted(false);
         return button;
     }
@@ -25,7 +25,8 @@ public class AppButton extends JButton {
     public static AppButton danger(String text, Runnable action) {
         AppButton button = new AppButton(text, action);
         button.setBackground(new Color(200, 60, 60));
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.BLACK);
+        button.setOpaque(true);
         button.setFocusPainted(false);
         return button;
     }

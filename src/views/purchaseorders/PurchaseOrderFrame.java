@@ -1,10 +1,12 @@
 package views.purchaseorders;
 
+import controllers.ProductController;
 import controllers.PurchaseOrderController;
+import controllers.SupplierController;
 import models.PurchaseOrder;
+import views.components.AppButton;
 import views.components.AppFrame;
 import views.components.AppTable;
-import views.components.ButtonBar;
 import views.components.ToolbarPanel;
 
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 public class PurchaseOrderFrame extends AppFrame {
 
     private final AppTable table;
+    private AppButton btnNew;
 
     public PurchaseOrderFrame() {
         table = new AppTable(new String[]{"N°", "Fecha", "Proveedor", "Total"});
@@ -21,8 +24,9 @@ public class PurchaseOrderFrame extends AppFrame {
     }
 
     private void initToolbar() {
+        btnNew = AppButton.primary("Nueva Orden de Compra", this::openCreateDialog);
         ToolbarPanel toolbar = new ToolbarPanel();
-        toolbar.add(ButtonBar.primary("Nueva Orden de Compra", this::openCreateDialog));
+        toolbar.add(btnNew);
         addNorth(toolbar);
     }
 
@@ -33,6 +37,10 @@ public class PurchaseOrderFrame extends AppFrame {
     }
 
     public void refresh() {
+        btnNew.setEnabled(
+            !SupplierController.getInstance().findAll().isEmpty()
+            && !ProductController.getInstance().findAll().isEmpty()
+        );
         table.clearRows();
         List<PurchaseOrder> orders = PurchaseOrderController.getInstance().findAll();
         for (PurchaseOrder o : orders) {

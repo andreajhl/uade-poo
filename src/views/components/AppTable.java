@@ -1,8 +1,8 @@
 package views.components;
 
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 
 public class AppTable extends JPanel {
 
@@ -35,6 +35,10 @@ public class AppTable extends JPanel {
     public int getSelectedRow() {
         return table.getSelectedRow();
     }
+    
+    public int getRowCount() {
+    return table.getRowCount();
+    }
 
     public Object getValueAt(int row, int col) {
         return model.getValueAt(row, col);
@@ -47,4 +51,7 @@ public class AppTable extends JPanel {
     public DefaultTableModel getModel() {
         return model;
     }
+    
+    
 }
+

@@ -1,13 +1,13 @@
 package views;
 
 import controllers.UserController;
+import java.awt.*;
+import javax.swing.*;
+import views.paymentorders.PaymentOrderFrame;
 import views.products.ProductFrame;
 import views.purchaseorders.PurchaseOrderFrame;
 import views.suppliers.SupplierFrame;
 import views.users.SelectUserDialog;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class MainFrame extends JFrame {
 
@@ -47,6 +47,7 @@ public class MainFrame extends JFrame {
         tabs.addTab("Proveedores", new SupplierFrame());
         tabs.addTab("Productos", new ProductFrame());
         tabs.addTab("Órdenes de Compra", new PurchaseOrderFrame());
+        tabs.addTab("Órdenes de Pago", new PaymentOrderFrame());
         add(tabs, BorderLayout.CENTER);
     }
 }

@@ -2,33 +2,32 @@ package views.products;
 
 import controllers.ProductController;
 import models.Product;
+import views.components.AppFrame;
 import views.components.AppTable;
 import views.components.ButtonBar;
+import views.components.ToolbarPanel;
 
-import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
-public class ProductFrame extends JPanel {
+public class ProductFrame extends AppFrame {
 
     private final AppTable table;
 
     public ProductFrame() {
-        setLayout(new BorderLayout());
         table = new AppTable(new String[]{"Código", "Descripción", "UDM", "Tipo IVA", "Rubro"});
         initToolbar();
-        add(table, BorderLayout.CENTER);
+        addCenter(table);
         refresh();
     }
 
     private void initToolbar() {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        ToolbarPanel toolbar = new ToolbarPanel();
         toolbar.add(ButtonBar.primary("Nuevo Producto", this::openCreateDialog));
-        add(toolbar, BorderLayout.NORTH);
+        addNorth(toolbar);
     }
 
     private void openCreateDialog() {
-        CreateProductDialog dialog = new CreateProductDialog((JFrame) SwingUtilities.getWindowAncestor(this));
+        CreateProductDialog dialog = new CreateProductDialog();
         dialog.setVisible(true);
         refresh();
     }

@@ -4,91 +4,76 @@ import controllers.SupplierController;
 import exceptions.EntityNotFoundException;
 import models.Category;
 import models.Supplier;
+import views.components.Alerts;
+import views.components.AppDialog;
+import views.components.AppList;
+import views.components.AppTextField;
 import views.components.ButtonBar;
+import views.components.FormPanel;
+import views.components.SectionPanel;
 
-import javax.swing.*;
-import java.awt.*;
-
-public class ManageCategoriesDialog extends JDialog {
+public class ManageCategoriesDialog extends AppDialog {
 
     private final Supplier supplier;
-    private DefaultListModel<Category> listModel;
-    private JList<Category> categoryList;
-    private JTextField txtNewCategory;
+    private AppList<Category> categoryList;
+    private AppTextField txtNewCategory;
 
-    public ManageCategoriesDialog(JFrame parent, Supplier supplier) {
-        super(parent, "Rubros de " + supplier.getRazonSocial(), true);
+    public ManageCategoriesDialog(Supplier supplier) {
+        super("Rubros de " + supplier.getRazonSocial(), 380, 380);
         this.supplier = supplier;
-        initComponents();
-        setSize(380, 380);
-        setLocationRelativeTo(parent);
         setResizable(false);
+        initComponents();
     }
 
     private void initComponents() {
-        listModel = new DefaultListModel<>();
-        for (Category c : supplier.getCategories()) listModel.addElement(c);
+        categoryList = new AppList<>();
+        for (Category c : supplier.getCategories()) categoryList.addElement(c);
 
-        categoryList = new JList<>(listModel);
-        categoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        txtNewCategory = new AppTextField();
 
-        txtNewCategory = new JTextField();
+        FormPanel addForm = new FormPanel("Agregar rubro");
+        addForm.addRow("Nombre:", txtNewCategory);
+        addForm.addFullRow(ButtonBar.primary("Agregar", this::addCategory));
 
-        JPanel addPanel = new JPanel(new BorderLayout(5, 0));
-        addPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
-        addPanel.add(new JLabel("Nuevo rubro:"), BorderLayout.WEST);
-        addPanel.add(txtNewCategory, BorderLayout.CENTER);
-        addPanel.add(ButtonBar.primary("Agregar", this::addCategory), BorderLayout.EAST);
-
-        JPanel listPanel = new JPanel(new BorderLayout(5, 5));
-        listPanel.setBorder(BorderFactory.createTitledBorder("Rubros asociados"));
-        listPanel.add(new JScrollPane(categoryList), BorderLayout.CENTER);
-        listPanel.add(ButtonBar.danger("Quitar seleccionado", this::removeCategory), BorderLayout.SOUTH);
-
-        JPanel center = new JPanel(new BorderLayout(5, 8));
-        center.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-        center.add(addPanel, BorderLayout.NORTH);
-        center.add(listPanel, BorderLayout.CENTER);
+        SectionPanel listPanel = new SectionPanel("Rubros asociados");
+        listPanel.addCenter(categoryList);
+        listPanel.addSouth(ButtonBar.danger("Quitar seleccionado", this::removeCategory));
 
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cerrar", this::dispose);
 
-        setLayout(new BorderLayout());
-        add(center, BorderLayout.CENTER);
-        add(bar, BorderLayout.SOUTH);
+        addNorth(addForm);
+        addCenter(listPanel);
+        addSouth(bar);
     }
 
     private void addCategory() {
         String name = txtNewCategory.getText().trim();
-
         if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ingresá el nombre del rubro.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Ingresá el nombre del rubro.");
             return;
         }
-
         Category category = new Category(name);
-
         try {
             SupplierController.getInstance().addCategory(supplier.getId(), category);
-            listModel.addElement(category);
+            categoryList.addElement(category);
             txtNewCategory.setText("");
         } catch (EntityNotFoundException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            Alerts.error(this, ex.getMessage());
         }
     }
 
     private void removeCategory() {
         Category selected = categoryList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this, "Seleccioná un rubro para quitar.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Seleccioná un rubro para quitar.");
             return;
         }
-
         try {
             SupplierController.getInstance().removeCategory(supplier.getId(), selected);
-            listModel.removeElement(selected);
+            categoryList.removeElement(selected);
         } catch (EntityNotFoundException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            Alerts.error(this, ex.getMessage());
         }
     }
 }

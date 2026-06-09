@@ -10,24 +10,26 @@ import models.Product;
 import models.PurchaseOrderDetail;
 import models.Supplier;
 import models.User;
+import views.components.Alerts;
+import views.components.AppComboBox;
+import views.components.AppDialog;
 import views.components.AppTable;
+import views.components.AppTextField;
+import views.components.BorderPanel;
 import views.components.ButtonBar;
 import views.components.FormPanel;
 import views.components.InfoLabel;
+import views.components.SectionPanel;
 import views.components.SupervisorApprovalDialog;
 
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CreatePurchaseOrderDialog extends JDialog {
+public class CreatePurchaseOrderDialog extends AppDialog {
 
-    private JComboBox<Supplier> cmbSupplier;
-    private JComboBox<Product> cmbProduct;
-    private JTextField txtQuantity;
+    private AppComboBox<Supplier> cmbSupplier;
+    private AppComboBox<Product> cmbProduct;
+    private AppTextField txtQuantity;
     private InfoLabel lblUnitPrice;
     private InfoLabel lblItemSubtotal;
     private InfoLabel lblTotal;
@@ -36,11 +38,8 @@ public class CreatePurchaseOrderDialog extends JDialog {
 
     private float currentUnitPrice = 0f;
 
-    public CreatePurchaseOrderDialog(JFrame parent) {
-        super(parent, "Nueva Orden de Compra", true);
-        setSize(620, 520);
-        setLocationRelativeTo(parent);
-        setLayout(new BorderLayout(5, 5));
+    public CreatePurchaseOrderDialog() {
+        super("Nueva Orden de Compra", 620, 520);
         details = new ArrayList<>();
         initSupplierPanel();
         initItemPanel();
@@ -49,30 +48,26 @@ public class CreatePurchaseOrderDialog extends JDialog {
     }
 
     private void initSupplierPanel() {
-        cmbSupplier = new JComboBox<>();
+        cmbSupplier = new AppComboBox<>();
         for (Supplier s : SupplierController.getInstance().findAll()) cmbSupplier.addItem(s);
-        cmbSupplier.addActionListener(e -> refreshUnitPrice());
+        cmbSupplier.onSelectionChanged(this::refreshUnitPrice);
 
         FormPanel form = new FormPanel("Proveedor");
         form.addRow("Proveedor:", cmbSupplier);
 
-        add(form, BorderLayout.NORTH);
+        addNorth(form);
     }
 
     private void initItemPanel() {
-        cmbProduct = new JComboBox<>();
+        cmbProduct = new AppComboBox<>();
         for (Product p : ProductController.getInstance().findAll()) cmbProduct.addItem(p);
-        cmbProduct.addActionListener(e -> refreshUnitPrice());
+        cmbProduct.onSelectionChanged(this::refreshUnitPrice);
 
-        txtQuantity = new JTextField("1");
+        txtQuantity = new AppTextField("1");
         lblUnitPrice = new InfoLabel("$ 0.00");
         lblItemSubtotal = new InfoLabel("$ 0.00");
 
-        txtQuantity.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { refreshItemSubtotal(); }
-            public void removeUpdate(DocumentEvent e) { refreshItemSubtotal(); }
-            public void changedUpdate(DocumentEvent e) { refreshItemSubtotal(); }
-        });
+        txtQuantity.onTextChanged(this::refreshItemSubtotal);
 
         FormPanel form = new FormPanel("Agregar ítem");
         form.addRow("Producto:", cmbProduct);
@@ -81,7 +76,7 @@ public class CreatePurchaseOrderDialog extends JDialog {
         form.addRow("Subtotal ítem:", lblItemSubtotal);
         form.addFullRow(ButtonBar.primary("Agregar ítem", this::addDetail));
 
-        add(form, BorderLayout.CENTER);
+        addCenter(form);
         refreshUnitPrice();
     }
 
@@ -89,28 +84,27 @@ public class CreatePurchaseOrderDialog extends JDialog {
         detailTable = new AppTable(new String[]{"Producto", "Cantidad", "Precio Unit.", "Subtotal"});
         lblTotal = InfoLabel.highlight("Total OC: $ 0.00");
 
-        JPanel bottomRow = new JPanel(new BorderLayout());
-        bottomRow.add(ButtonBar.danger("Quitar seleccionado", this::removeSelected), BorderLayout.WEST);
-        bottomRow.add(lblTotal, BorderLayout.EAST);
+        BorderPanel bottomRow = new BorderPanel();
+        bottomRow.addWest(ButtonBar.danger("Quitar seleccionado", this::removeSelected));
+        bottomRow.addEast(lblTotal);
 
-        JPanel tablePanel = new JPanel(new BorderLayout(5, 5));
-        tablePanel.setBorder(BorderFactory.createTitledBorder("Ítems agregados"));
-        tablePanel.add(detailTable, BorderLayout.CENTER);
-        tablePanel.add(bottomRow, BorderLayout.SOUTH);
+        SectionPanel tablePanel = new SectionPanel("Ítems agregados");
+        tablePanel.addCenter(detailTable);
+        tablePanel.addSouth(bottomRow);
 
-        add(tablePanel, BorderLayout.SOUTH);
+        addSouth(tablePanel);
     }
 
     private void initButtons() {
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Confirmar Orden", this::confirm);
-        getContentPane().add(bar, BorderLayout.SOUTH);
+        addSouth(bar);
     }
 
     private void refreshUnitPrice() {
-        Supplier supplier = (Supplier) cmbSupplier.getSelectedItem();
-        Product product = (Product) cmbProduct.getSelectedItem();
+        Supplier supplier = cmbSupplier.getSelected();
+        Product product = cmbProduct.getSelected();
         currentUnitPrice = (supplier == null || product == null) ? 0f : product.getPriceForSupplier(supplier.getId());
         lblUnitPrice.setText(String.format("$ %.2f", currentUnitPrice));
         refreshItemSubtotal();
@@ -126,20 +120,20 @@ public class CreatePurchaseOrderDialog extends JDialog {
     }
 
     private void addDetail() {
-        Product product = (Product) cmbProduct.getSelectedItem();
+        Product product = cmbProduct.getSelected();
         if (product == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione un producto.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Seleccione un producto.");
             return;
         }
         int quantity;
         try {
             quantity = Integer.parseInt(txtQuantity.getText().trim());
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "La cantidad debe ser un número entero.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "La cantidad debe ser un número entero.");
             return;
         }
         if (quantity <= 0) {
-            JOptionPane.showMessageDialog(this, "La cantidad debe ser mayor a 0.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "La cantidad debe ser mayor a 0.");
             return;
         }
         PurchaseOrderDetail detail = new PurchaseOrderDetail(product, quantity, currentUnitPrice);
@@ -169,13 +163,13 @@ public class CreatePurchaseOrderDialog extends JDialog {
     }
 
     private void confirm() {
-        Supplier supplier = (Supplier) cmbSupplier.getSelectedItem();
+        Supplier supplier = cmbSupplier.getSelected();
         if (supplier == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione un proveedor.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Seleccione un proveedor.");
             return;
         }
         if (details.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Agregue al menos un ítem.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Agregue al menos un ítem.");
             return;
         }
 
@@ -183,29 +177,28 @@ public class CreatePurchaseOrderDialog extends JDialog {
 
         try {
             PurchaseOrderController.getInstance().createPurchaseOrder(supplier.getId(), details, currentUser.getId());
-            JOptionPane.showMessageDialog(this, "Orden de compra creada correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            Alerts.info(this, "Orden de compra creada correctamente.");
             dispose();
         } catch (CreditLimitExceededException ex) {
-            int option = JOptionPane.showConfirmDialog(this,
+            boolean wantsAuth = Alerts.confirm(this,
                 ex.getMessage() + "\n\n¿Desea solicitar autorización de supervisor para continuar?",
-                "Tope de Crédito Excedido", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (option == JOptionPane.YES_OPTION) {
-                SupervisorApprovalDialog approvalDialog = new SupervisorApprovalDialog(
-                        (JFrame) getParent(), "Límite de crédito excedido");
+                "Tope de Crédito Excedido");
+            if (wantsAuth) {
+                SupervisorApprovalDialog approvalDialog = new SupervisorApprovalDialog("Límite de crédito excedido");
                 approvalDialog.setVisible(true);
                 if (approvalDialog.isApproved()) {
                     try {
                         PurchaseOrderController.getInstance().createPurchaseOrderWithAuthorization(
                                 supplier.getId(), details, currentUser.getId(), approvalDialog.getAuthorization());
-                        JOptionPane.showMessageDialog(this, "Orden de compra creada con autorización.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        Alerts.info(this, "Orden de compra creada con autorización.");
                         dispose();
                     } catch (EntityNotFoundException ex2) {
-                        JOptionPane.showMessageDialog(this, ex2.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        Alerts.error(this, ex2.getMessage());
                     }
                 }
             }
         } catch (EntityNotFoundException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            Alerts.error(this, ex.getMessage());
         }
     }
 }

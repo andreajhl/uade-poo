@@ -4,51 +4,50 @@ import controllers.TaxRuleController;
 import models.TaxRule;
 import models.TaxScale;
 import models.enums.TaxType;
+import views.components.Alerts;
+import views.components.AppComboBox;
+import views.components.AppDialog;
 import views.components.AppTable;
+import views.components.AppTextField;
+import views.components.BorderPanel;
 import views.components.ButtonBar;
 import views.components.FormPanel;
 
-import javax.swing.*;
-import java.awt.*;
+public class CreateTaxRuleDialog extends AppDialog {
 
-public class CreateTaxRuleDialog extends JDialog {
-
-    private JComboBox<TaxType> cmbTaxType;
-    private JTextField txtDefaultPercentage;
-    private JTextField txtMinimumTaxableAmount;
-    private JTextField txtFromAmount;
-    private JTextField txtToAmount;
-    private JTextField txtScalePercentage;
+    private AppComboBox<TaxType> cmbTaxType;
+    private AppTextField txtDefaultPercentage;
+    private AppTextField txtMinimumTaxableAmount;
+    private AppTextField txtFromAmount;
+    private AppTextField txtToAmount;
+    private AppTextField txtScalePercentage;
     private AppTable scaleTable;
     private TaxRule createdRule;
 
-    public CreateTaxRuleDialog(JFrame parent) {
-        super(parent, "Nueva Regla Impositiva", true);
-        setSize(500, 480);
-        setLocationRelativeTo(parent);
-        setLayout(new BorderLayout(5, 5));
+    public CreateTaxRuleDialog() {
+        super("Nueva Regla Impositiva", 500, 480);
         initRuleForm();
         initScalePanel();
         initButtons();
     }
 
     private void initRuleForm() {
-        cmbTaxType = new JComboBox<>(TaxType.values());
-        txtDefaultPercentage = new JTextField();
-        txtMinimumTaxableAmount = new JTextField("0");
+        cmbTaxType = new AppComboBox<>(TaxType.values());
+        txtDefaultPercentage = new AppTextField();
+        txtMinimumTaxableAmount = new AppTextField("0");
 
         FormPanel form = new FormPanel("Regla");
         form.addRow("Tipo de impuesto *", cmbTaxType);
         form.addRow("Porcentaje por defecto *", txtDefaultPercentage);
         form.addRow("Monto mínimo imponible", txtMinimumTaxableAmount);
 
-        add(form, BorderLayout.NORTH);
+        addNorth(form);
     }
 
     private void initScalePanel() {
-        txtFromAmount = new JTextField();
-        txtToAmount = new JTextField();
-        txtScalePercentage = new JTextField();
+        txtFromAmount = new AppTextField();
+        txtToAmount = new AppTextField();
+        txtScalePercentage = new AppTextField();
 
         FormPanel scaleForm = new FormPanel("Escalas (opcional)");
         scaleForm.addRow("Desde $", txtFromAmount);
@@ -58,18 +57,18 @@ public class CreateTaxRuleDialog extends JDialog {
 
         scaleTable = new AppTable(new String[]{"Desde $", "Hasta $", "Porcentaje %"});
 
-        JPanel scalePanel = new JPanel(new BorderLayout(5, 5));
-        scalePanel.add(scaleForm, BorderLayout.NORTH);
-        scalePanel.add(scaleTable, BorderLayout.CENTER);
+        BorderPanel scalePanel = new BorderPanel(5, 5);
+        scalePanel.addNorth(scaleForm);
+        scalePanel.addCenter(scaleTable);
 
-        add(scalePanel, BorderLayout.CENTER);
+        addCenter(scalePanel);
     }
 
     private void initButtons() {
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Guardar", this::save);
-        add(bar, BorderLayout.SOUTH);
+        addSouth(bar);
     }
 
     private void addScale() {
@@ -79,13 +78,11 @@ public class CreateTaxRuleDialog extends JDialog {
             to = Float.parseFloat(txtToAmount.getText().trim());
             percentage = Float.parseFloat(txtScalePercentage.getText().trim());
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Los valores de escala deben ser números válidos.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Los valores de escala deben ser números válidos.");
             return;
         }
         if (from >= to) {
-            JOptionPane.showMessageDialog(this, "El monto 'Desde' debe ser menor al monto 'Hasta'.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "El monto 'Desde' debe ser menor al monto 'Hasta'.");
             return;
         }
         scaleTable.addRow(new Object[]{
@@ -99,14 +96,13 @@ public class CreateTaxRuleDialog extends JDialog {
     }
 
     private void save() {
-        TaxType taxType = (TaxType) cmbTaxType.getSelectedItem();
+        TaxType taxType = cmbTaxType.getSelected();
         float defaultPercentage, minimumTaxableAmount;
         try {
             defaultPercentage = Float.parseFloat(txtDefaultPercentage.getText().trim());
             minimumTaxableAmount = Float.parseFloat(txtMinimumTaxableAmount.getText().trim());
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Los porcentajes y montos deben ser números válidos.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Los porcentajes y montos deben ser números válidos.");
             return;
         }
 
@@ -119,7 +115,7 @@ public class CreateTaxRuleDialog extends JDialog {
             createdRule.addScale(new TaxScale(from, to, pct));
         }
 
-        JOptionPane.showMessageDialog(this, "Regla impositiva creada correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        Alerts.info(this, "Regla impositiva creada correctamente.");
         dispose();
     }
 

@@ -2,42 +2,41 @@ package views.suppliers;
 
 import controllers.SupplierController;
 import models.Supplier;
+import views.components.AppButton;
+import views.components.AppFrame;
 import views.components.AppTable;
 import views.components.ButtonBar;
+import views.components.ToolbarPanel;
 
-import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
-public class SupplierFrame extends JPanel {
+public class SupplierFrame extends AppFrame {
 
     private final AppTable table;
-    private JButton btnManageCategories;
+    private AppButton btnManageCategories;
 
     public SupplierFrame() {
-        setLayout(new BorderLayout());
         table = new AppTable(new String[]{"CUIT", "Razón Social", "Nombre Fantasía", "Condición IVA", "Tope Crédito"});
         table.getTable().getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) btnManageCategories.setEnabled(table.getSelectedRow() >= 0);
         });
         initToolbar();
-        add(table, BorderLayout.CENTER);
+        addCenter(table);
         refresh();
     }
 
     private void initToolbar() {
-        btnManageCategories = new JButton("Gestionar Rubros");
+        btnManageCategories = new AppButton("Gestionar Rubros", this::openManageCategories);
         btnManageCategories.setEnabled(false);
-        btnManageCategories.addActionListener(e -> openManageCategories());
 
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        ToolbarPanel toolbar = new ToolbarPanel();
         toolbar.add(ButtonBar.primary("Nuevo Proveedor", this::openCreateDialog));
         toolbar.add(btnManageCategories);
-        add(toolbar, BorderLayout.NORTH);
+        addNorth(toolbar);
     }
 
     private void openCreateDialog() {
-        CreateSupplierDialog dialog = new CreateSupplierDialog((JFrame) SwingUtilities.getWindowAncestor(this));
+        CreateSupplierDialog dialog = new CreateSupplierDialog();
         dialog.setVisible(true);
         refresh();
     }
@@ -48,8 +47,7 @@ public class SupplierFrame extends JPanel {
         List<Supplier> suppliers = SupplierController.getInstance().findAll();
         if (row >= suppliers.size()) return;
         Supplier supplier = suppliers.get(row);
-        ManageCategoriesDialog dialog = new ManageCategoriesDialog(
-                (JFrame) SwingUtilities.getWindowAncestor(this), supplier);
+        ManageCategoriesDialog dialog = new ManageCategoriesDialog(supplier);
         dialog.setVisible(true);
     }
 

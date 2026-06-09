@@ -6,21 +6,18 @@ import models.User;
 import models.enums.Permission;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
-public class SupervisorApprovalDialog extends JDialog {
+public class SupervisorApprovalDialog extends AppDialog {
 
     private JComboBox<User> cmbSupervisor;
     private JTextArea txtObservation;
     private Authorization authorization;
 
-    public SupervisorApprovalDialog(JFrame parent, String reason) {
-        super(parent, "Autorización de Supervisor", true);
-        initComponents(reason);
-        setSize(420, 300);
-        setLocationRelativeTo(parent);
+    public SupervisorApprovalDialog(String reason) {
+        super("Autorización de Supervisor", 420, 300);
         setResizable(false);
+        initComponents(reason);
     }
 
     private void initComponents(String reason) {
@@ -39,9 +36,8 @@ public class SupervisorApprovalDialog extends JDialog {
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Autorizar", this::approve);
 
-        setLayout(new BorderLayout());
-        add(form, BorderLayout.CENTER);
-        add(bar, BorderLayout.SOUTH);
+        addCenter(form);
+        addSouth(bar);
     }
 
     private void approve() {

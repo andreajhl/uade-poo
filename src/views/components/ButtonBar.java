@@ -9,6 +9,14 @@ public class ButtonBar extends JPanel {
         setLayout(new FlowLayout(FlowLayout.RIGHT));
     }
 
+    private ButtonBar(int alignment) {
+        setLayout(new FlowLayout(alignment));
+    }
+
+    public static ButtonBar centered() {
+        return new ButtonBar(FlowLayout.CENTER);
+    }
+
     public JButton addButton(String text, Runnable action) {
         JButton button = new JButton(text);
         button.addActionListener(e -> action.run());

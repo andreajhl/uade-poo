@@ -2,50 +2,48 @@ package views.suppliers;
 
 import controllers.SupplierController;
 import models.enums.IVACondition;
+import views.components.Alerts;
+import views.components.AppComboBox;
+import views.components.AppDialog;
+import views.components.AppScrollPane;
+import views.components.AppTextField;
 import views.components.ButtonBar;
 import views.components.FormPanel;
+import views.components.PlaceholderTextField;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
-public class CreateSupplierDialog extends JDialog {
+public class CreateSupplierDialog extends AppDialog {
 
-    private JTextField txtCuit;
-    private JTextField txtRazonSocial;
-    private JTextField txtFantasyName;
-    private JTextField txtAddress;
-    private JTextField txtPhone;
-    private JTextField txtEmail;
-    private JComboBox<IVACondition> cmbIvaCondition;
-    private JTextField txtIngresosBrutos;
-    private JTextField txtActivityStartDate;
-    private JTextField txtCreditLimit;
+    private AppTextField txtCuit;
+    private AppTextField txtRazonSocial;
+    private AppTextField txtFantasyName;
+    private AppTextField txtAddress;
+    private AppTextField txtPhone;
+    private AppTextField txtEmail;
+    private AppComboBox<IVACondition> cmbIvaCondition;
+    private AppTextField txtIngresosBrutos;
+    private PlaceholderTextField txtActivityStartDate;
+    private AppTextField txtCreditLimit;
 
-    public CreateSupplierDialog(JFrame parent) {
-        super(parent, "Nuevo Proveedor", true);
-        setSize(450, 420);
-        setLocationRelativeTo(parent);
-        setLayout(new BorderLayout());
+    public CreateSupplierDialog() {
+        super("Nuevo Proveedor", 450, 420);
         initForm();
         initButtons();
     }
 
     private void initForm() {
-        txtCuit = new JTextField();
-        txtRazonSocial = new JTextField();
-        txtFantasyName = new JTextField();
-        txtAddress = new JTextField();
-        txtPhone = new JTextField();
-        txtEmail = new JTextField();
-        cmbIvaCondition = new JComboBox<>(IVACondition.values());
-        txtIngresosBrutos = new JTextField();
-        txtActivityStartDate = new JTextField();
-        applyPlaceholder(txtActivityStartDate, "yyyy-MM-dd");
-        txtCreditLimit = new JTextField("0");
+        txtCuit = new AppTextField();
+        txtRazonSocial = new AppTextField();
+        txtFantasyName = new AppTextField();
+        txtAddress = new AppTextField();
+        txtPhone = new AppTextField();
+        txtEmail = new AppTextField();
+        cmbIvaCondition = new AppComboBox<>(IVACondition.values());
+        txtIngresosBrutos = new AppTextField();
+        txtActivityStartDate = new PlaceholderTextField("yyyy-MM-dd");
+        txtCreditLimit = new AppTextField("0");
 
         FormPanel form = new FormPanel();
         form.addRow("CUIT *", txtCuit);
@@ -59,14 +57,14 @@ public class CreateSupplierDialog extends JDialog {
         form.addRow("Inicio Actividades *", txtActivityStartDate);
         form.addRow("Tope Crédito *", txtCreditLimit);
 
-        add(new JScrollPane(form), BorderLayout.CENTER);
+        addCenter(new AppScrollPane(form));
     }
 
     private void initButtons() {
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Guardar", this::save);
-        add(bar, BorderLayout.SOUTH);
+        addSouth(bar);
     }
 
     private void save() {
@@ -79,19 +77,17 @@ public class CreateSupplierDialog extends JDialog {
 
         if (cuit.isEmpty() || razonSocial.isEmpty() || fantasyName.isEmpty()
                 || address.isEmpty() || phone.isEmpty() || ingresosBrutos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Complete todos los campos obligatorios (*).",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Complete todos los campos obligatorios (*).");
             return;
         }
 
         LocalDate activityStartDate;
         try {
-            String dateText = txtActivityStartDate.getText().trim();
-            if (dateText.equals("yyyy-MM-dd") || dateText.isEmpty()) throw new DateTimeParseException("", "", 0);
+            String dateText = txtActivityStartDate.getValue();
+            if (dateText.isEmpty()) throw new DateTimeParseException("", "", 0);
             activityStartDate = LocalDate.parse(dateText);
         } catch (DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(this, "Fecha de inicio inválida. Use el formato yyyy-MM-dd.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Fecha de inicio inválida. Use el formato yyyy-MM-dd.");
             return;
         }
 
@@ -99,38 +95,18 @@ public class CreateSupplierDialog extends JDialog {
         try {
             creditLimit = Float.parseFloat(txtCreditLimit.getText().trim());
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "El tope de crédito debe ser un número válido.",
-                    "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "El tope de crédito debe ser un número válido.");
             return;
         }
 
         SupplierController.getInstance().create(
                 cuit, razonSocial, fantasyName, address, phone,
                 txtEmail.getText().trim(),
-                (IVACondition) cmbIvaCondition.getSelectedItem(),
+                cmbIvaCondition.getSelected(),
                 ingresosBrutos, activityStartDate, creditLimit
         );
 
-        JOptionPane.showMessageDialog(this, "Proveedor creado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        Alerts.info(this, "Proveedor creado correctamente.");
         dispose();
-    }
-
-    private void applyPlaceholder(JTextField field, String placeholder) {
-        field.setForeground(Color.GRAY);
-        field.setText(placeholder);
-        field.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) {
-                if (field.getText().equals(placeholder)) {
-                    field.setText("");
-                    field.setForeground(Color.BLACK);
-                }
-            }
-            public void focusLost(FocusEvent e) {
-                if (field.getText().isEmpty()) {
-                    field.setForeground(Color.GRAY);
-                    field.setText(placeholder);
-                }
-            }
-        });
     }
 }

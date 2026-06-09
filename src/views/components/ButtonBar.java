@@ -27,7 +27,7 @@ public class ButtonBar extends JPanel {
     public static JButton primary(String text, Runnable action) {
         JButton button = new JButton(text);
         button.setBackground(new Color(70, 130, 180));
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.BLACK);
         button.setFocusPainted(false);
         button.addActionListener(e -> action.run());
         return button;
@@ -36,7 +36,7 @@ public class ButtonBar extends JPanel {
     public static JButton danger(String text, Runnable action) {
         JButton button = new JButton(text);
         button.setBackground(new Color(200, 60, 60));
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.BLACK);
         button.setFocusPainted(false);
         button.addActionListener(e -> action.run());
         return button;

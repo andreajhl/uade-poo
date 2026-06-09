@@ -14,4 +14,6 @@ public class AppFrame extends JPanel {
     public void addSouth(Component c) { add(c, BorderLayout.SOUTH); }
     public void addEast(Component c) { add(c, BorderLayout.EAST); }
     public void addWest(Component c) { add(c, BorderLayout.WEST); }
+
+    public void refresh() {}
 }

@@ -7,6 +7,7 @@ import controllers.UserController;
 import exceptions.CreditLimitExceededException;
 import exceptions.EntityNotFoundException;
 import models.Product;
+import models.ProductSupplier;
 import models.PurchaseOrderDetail;
 import models.Supplier;
 import models.User;
@@ -30,13 +31,11 @@ public class CreatePurchaseOrderDialog extends AppDialog {
     private AppComboBox<Supplier> cmbSupplier;
     private AppComboBox<Product> cmbProduct;
     private AppTextField txtQuantity;
-    private InfoLabel lblUnitPrice;
+    private AppTextField txtUnitPrice;
     private InfoLabel lblItemSubtotal;
     private InfoLabel lblTotal;
     private AppTable detailTable;
     private List<PurchaseOrderDetail> details;
-
-    private float currentUnitPrice = 0f;
 
     public CreatePurchaseOrderDialog() {
         super("Nueva Orden de Compra", 620, 520);
@@ -54,7 +53,6 @@ public class CreatePurchaseOrderDialog extends AppDialog {
 
         FormPanel form = new FormPanel("Proveedor");
         form.addRow("Proveedor:", cmbSupplier);
-
         addNorth(form);
     }
 
@@ -64,15 +62,16 @@ public class CreatePurchaseOrderDialog extends AppDialog {
         cmbProduct.onSelectionChanged(this::refreshUnitPrice);
 
         txtQuantity = new AppTextField("1");
-        lblUnitPrice = new InfoLabel("$ 0.00");
+        txtUnitPrice = new AppTextField("0.00");
         lblItemSubtotal = new InfoLabel("$ 0.00");
 
         txtQuantity.onTextChanged(this::refreshItemSubtotal);
+        txtUnitPrice.onTextChanged(this::refreshItemSubtotal);
 
         FormPanel form = new FormPanel("Agregar ítem");
         form.addRow("Producto:", cmbProduct);
         form.addRow("Cantidad:", txtQuantity);
-        form.addRow("Precio unitario:", lblUnitPrice);
+        form.addRow("Precio unitario:", txtUnitPrice);
         form.addRow("Subtotal ítem:", lblItemSubtotal);
         form.addFullRow(ButtonBar.primary("Agregar ítem", this::addDetail));
 
@@ -105,26 +104,29 @@ public class CreatePurchaseOrderDialog extends AppDialog {
     private void refreshUnitPrice() {
         Supplier supplier = cmbSupplier.getSelected();
         Product product = cmbProduct.getSelected();
-        currentUnitPrice = (supplier == null || product == null) ? 0f : product.getPriceForSupplier(supplier.getId());
-        lblUnitPrice.setText(String.format("$ %.2f", currentUnitPrice));
+        float known = (supplier == null || product == null) ? 0f : product.getPriceForSupplier(supplier.getId());
+        txtUnitPrice.setText(String.format("%.2f", known));
         refreshItemSubtotal();
     }
 
     private void refreshItemSubtotal() {
         try {
             int qty = Integer.parseInt(txtQuantity.getText().trim());
-            lblItemSubtotal.setText(String.format("$ %.2f", qty * currentUnitPrice));
+            float price = Float.parseFloat(txtUnitPrice.getText().trim());
+            lblItemSubtotal.setText(String.format("$ %.2f", qty * price));
         } catch (NumberFormatException e) {
             lblItemSubtotal.setText("$ -");
         }
     }
 
     private void addDetail() {
+        Supplier supplier = cmbSupplier.getSelected();
         Product product = cmbProduct.getSelected();
         if (product == null) {
             Alerts.warn(this, "Seleccione un producto.");
             return;
         }
+
         int quantity;
         try {
             quantity = Integer.parseInt(txtQuantity.getText().trim());
@@ -136,12 +138,29 @@ public class CreatePurchaseOrderDialog extends AppDialog {
             Alerts.warn(this, "La cantidad debe ser mayor a 0.");
             return;
         }
-        PurchaseOrderDetail detail = new PurchaseOrderDetail(product, quantity, currentUnitPrice);
+
+        float unitPrice;
+        try {
+            unitPrice = Float.parseFloat(txtUnitPrice.getText().trim());
+        } catch (NumberFormatException ex) {
+            Alerts.warn(this, "El precio unitario debe ser un número válido.");
+            return;
+        }
+        if (unitPrice < 0) {
+            Alerts.warn(this, "El precio unitario no puede ser negativo.");
+            return;
+        }
+
+        if (supplier != null) {
+            product.addSupplierPrice(new ProductSupplier(supplier.getId(), unitPrice, product.getCategory()));
+        }
+
+        PurchaseOrderDetail detail = new PurchaseOrderDetail(product, quantity, unitPrice);
         details.add(detail);
         detailTable.addRow(new Object[]{
             product.getDescription(),
             quantity,
-            String.format("$ %.2f", currentUnitPrice),
+            String.format("$ %.2f", unitPrice),
             String.format("$ %.2f", detail.getSubtotal())
         });
         refreshOrderTotal();

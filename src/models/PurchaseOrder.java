@@ -71,4 +71,9 @@ public class PurchaseOrder {
     public PurchaseOrderStatus getStatus() { return status; }
 
     public void setStatus(PurchaseOrderStatus status) { this.status = status; }
+
+    @Override
+    public String toString() {
+        return "OC #" + number + " — " + supplier.getRazonSocial() + " (" + issueDate + ")";
+    }
 }

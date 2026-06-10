@@ -14,28 +14,29 @@ import models.Supplier;
 import models.User;
 import models.Voucher;
 import models.VoucherPayment;
+import models.enums.VoucherType;
 import views.components.Alerts;
+import views.components.AppComboBox;
+import views.components.AppDialog;
 import views.components.AppTable;
 import views.components.ButtonBar;
+import views.components.FormPanel;
+import views.components.InfoLabel;
+import views.components.SectionPanel;
 
-public class CreatePaymentOrderDialog extends JDialog {
+public class CreatePaymentOrderDialog extends AppDialog {
 
-    private JComboBox<Supplier> cmbSupplier;
+    private AppComboBox<Supplier> cmbSupplier;
     private AppTable vouchersTable;
     private AppTable selectedVouchersTable;
-    private JLabel lblTotalVouchers;
-    private JLabel lblTotalRetentions;
-    private JLabel lblNetAmount;
+    private InfoLabel lblTotalVouchers;
+    private InfoLabel lblTotalRetentions;
+    private InfoLabel lblNetAmount;
     private List<VoucherPayment> selectedPayments;
 
-    public CreatePaymentOrderDialog(JFrame parent) {
-        super(parent, "Nueva Orden de Pago", true);
-        setSize(800, 600);
-        setLocationRelativeTo(parent);
-        setLayout(new BorderLayout(5, 5));
-
+    public CreatePaymentOrderDialog() {
+        super("Nueva Orden de Pago", 900, 650);
         selectedPayments = new ArrayList<>();
-
         initSupplierPanel();
         initVouchersPanel();
         initSummaryPanel();
@@ -43,89 +44,49 @@ public class CreatePaymentOrderDialog extends JDialog {
     }
 
     private void initSupplierPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.setBorder(BorderFactory.createTitledBorder("Proveedor"));
-
-        cmbSupplier = new JComboBox<>();
+        cmbSupplier = new AppComboBox<>();
         for (Supplier s : SupplierController.getInstance().findAll()) {
             cmbSupplier.addItem(s);
         }
+        cmbSupplier.onSelectionChanged(this::refreshPendingVouchers);
 
-        cmbSupplier.addActionListener(e -> refreshPendingVouchers());
-        cmbSupplier.setPreferredSize(new Dimension(300, 25));
+        FormPanel form = new FormPanel("Proveedor");
+        form.addRow("Seleccionar *", cmbSupplier);
 
-        panel.add(new JLabel("Proveedor:"));
-        panel.add(cmbSupplier);
-
-        add(panel, BorderLayout.NORTH);
+        addNorth(form);
     }
 
     private void initVouchersPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Comprobantes"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.weightx = 1;
-        gbc.weighty = 1;
+    vouchersTable = new AppTable(new String[]{"Número", "Tipo", "Fecha", "Monto Neto", "IVA", "Total", "Estado"});
+    selectedVouchersTable = new AppTable(new String[]{"Número", "Tipo", "Monto Original", "Monto a Pagar"});
 
-        vouchersTable = new AppTable(new String[]{"Número", "Fecha", "Monto", "Estado"});
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridheight = 2;
-        panel.add(new JScrollPane(vouchersTable), gbc);
+    JPanel buttonsPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+    buttonsPanel.setBorder(BorderFactory.createEmptyBorder(50, 5, 50, 5));
+    buttonsPanel.add(ButtonBar.primary(">>", this::moveToSelected));
+    buttonsPanel.add(ButtonBar.danger("<<", this::removeSelected));
 
-        JPanel buttonsPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-        buttonsPanel.add(ButtonBar.primary(">>", this::moveToSelected));
-        buttonsPanel.add(ButtonBar.danger("<<", this::removeSelected));
+    JPanel centerPanel = new JPanel(new BorderLayout(5, 5));
+    centerPanel.add(vouchersTable, BorderLayout.WEST);
+    centerPanel.add(buttonsPanel, BorderLayout.CENTER);
+    centerPanel.add(selectedVouchersTable, BorderLayout.EAST);
 
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.gridheight = 2;
-        gbc.weightx = 0;
-        gbc.weighty = 0;
-        panel.add(buttonsPanel, gbc);
+    SectionPanel vouchersPanel = new SectionPanel("Comprobantes Disponibles (Facturas y ND)");
+    vouchersPanel.addCenter(centerPanel);
 
-        selectedVouchersTable = new AppTable(new String[]{"Número", "Monto Original", "Monto a Pagar"});
-        gbc.gridx = 2;
-        gbc.gridy = 0;
-        gbc.gridheight = 2;
-        gbc.weightx = 1;
-        gbc.weighty = 1;
-        panel.add(new JScrollPane(selectedVouchersTable), gbc);
-
-        add(panel, BorderLayout.CENTER);
-    }
+    addCenter(vouchersPanel);
+}
 
     private void initSummaryPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Resumen"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 16, 8, 16);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        lblTotalVouchers = new InfoLabel("$ 0.00");
+        lblTotalRetentions = new InfoLabel("$ 0.00");
+        lblNetAmount = InfoLabel.highlight("$ 0.00");
 
-        lblTotalVouchers = new JLabel("Total Comprobantes: $ 0.00");
-        lblTotalVouchers.setFont(lblTotalVouchers.getFont().deriveFont(Font.BOLD, 12f));
+        FormPanel summaryForm = new FormPanel();
+        summaryForm.addRow("Total Comprobantes:", lblTotalVouchers);
+        summaryForm.addRow("Total Retenciones:", lblTotalRetentions);
+        summaryForm.addRow("Neto a Pagar:", lblNetAmount);
 
-        lblTotalRetentions = new JLabel("Total Retenciones: $ 0.00");
-        lblTotalRetentions.setFont(lblTotalRetentions.getFont().deriveFont(Font.BOLD, 12f));
-
-        lblNetAmount = new JLabel("Neto a Pagar: $ 0.00");
-        lblNetAmount.setFont(lblNetAmount.getFont().deriveFont(Font.BOLD, 14f));
-        lblNetAmount.setForeground(new Color(0, 100, 0));
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(lblTotalVouchers, gbc);
-
-        gbc.gridy = 1;
-        panel.add(lblTotalRetentions, gbc);
-
-        gbc.gridy = 2;
-        gbc.insets = new Insets(15, 16, 8, 16);
-        panel.add(lblNetAmount, gbc);
-
-        add(panel, BorderLayout.SOUTH);
+        addSouth(summaryForm);
     }
 
     private void initButtons() {
@@ -136,26 +97,38 @@ public class CreatePaymentOrderDialog extends JDialog {
     }
 
     private void refreshPendingVouchers() {
-        Supplier supplier = (Supplier) cmbSupplier.getSelectedItem();
-        if (supplier == null) return;
+        Supplier supplier = cmbSupplier.getSelected();
+        if (supplier == null) {
+            vouchersTable.clearRows();
+            return;
+        }
 
         vouchersTable.clearRows();
 
         try {
-            List<Voucher> pending = PaymentOrderController.getInstance()
-                .getPendingVouchersBySupplier(supplier.getId());
-
-            for (Voucher v : pending) {
-                vouchersTable.addRow(new Object[]{
-                    v.getNumber(),
-                    v.getIssueDate(),
-                    String.format("$ %.2f", v.getGrossTotal()),
-
-                    v.getStatus().name()
-                });
+            List<Voucher> allVouchers = VoucherController.getInstance().findBySupplier(supplier.getId());
+            
+            for (Voucher v : allVouchers) {
+                // Solo mostrar Facturas (A, B, C) y Notas de Débito que están PENDING
+                boolean isPayableType = v.getType() == VoucherType.FACTURA_A
+                        || v.getType() == VoucherType.FACTURA_B
+                        || v.getType() == VoucherType.FACTURA_C
+                        || v.getType() == VoucherType.NOTA_DEBITO;
+                
+                if (isPayableType && v.getStatus().name().equals("PENDING")) {
+                    vouchersTable.addRow(new Object[]{
+                        v.getNumber(),
+                        v.getType().name(),
+                        v.getIssueDate(),
+                        String.format("$ %.2f", v.getNetTotal()),
+                        String.format("$ %.2f", v.getVatTotal()),
+                        String.format("$ %.2f", v.getGrossTotal()),
+                        v.getStatus().name()
+                    });
+                }
             }
-        } catch (EntityNotFoundException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            Alerts.error(this, "Error al cargar comprobantes: " + ex.getMessage());
         }
     }
 
@@ -168,10 +141,11 @@ public class CreatePaymentOrderDialog extends JDialog {
 
         Object nro = vouchersTable.getValueAt(row, 0);
         Object tipo = vouchersTable.getValueAt(row, 1);
-        Object monto = vouchersTable.getValueAt(row, 3);
+        Object monto = vouchersTable.getValueAt(row, 5);
 
         selectedVouchersTable.addRow(new Object[]{
             nro,
+            tipo,
             monto,
             monto
         });
@@ -182,13 +156,20 @@ public class CreatePaymentOrderDialog extends JDialog {
 
     private void removeSelected() {
         int row = selectedVouchersTable.getSelectedRow();
-        if (row < 0) return;
+        if (row < 0) {
+            Alerts.warn(this, "Seleccioná un comprobante para remover.");
+            return;
+        }
 
         Object nro = selectedVouchersTable.getValueAt(row, 0);
-        Object monto = selectedVouchersTable.getValueAt(row, 1);
+        Object tipo = selectedVouchersTable.getValueAt(row, 1);
+        Object monto = selectedVouchersTable.getValueAt(row, 2);
 
         vouchersTable.addRow(new Object[]{
             nro,
+            tipo,
+            "",
+            "",
             "",
             monto,
             "PENDING"
@@ -202,39 +183,65 @@ public class CreatePaymentOrderDialog extends JDialog {
         float totalVouchers = 0f;
 
         for (int i = 0; i < selectedVouchersTable.getRowCount(); i++) {
-            String monto = (String) selectedVouchersTable.getValueAt(i, 2);
-            float valor = Float.parseFloat(monto.replaceAll("[^0-9.]", ""));
+            String monto = (String) selectedVouchersTable.getValueAt(i, 3);
+            float valor = parseDecimal(monto);
             totalVouchers += valor;
         }
 
-        lblTotalVouchers.setText(String.format("Total Comprobantes: $ %.2f", totalVouchers));
+        lblTotalVouchers.setText(String.format("$ %.2f", totalVouchers));
 
         float totalRetentions = totalVouchers * 0.03f;
-        lblTotalRetentions.setText(String.format("Total Retenciones: $ %.2f", totalRetentions));
+        lblTotalRetentions.setText(String.format("$ %.2f", totalRetentions));
 
         float netAmount = totalVouchers - totalRetentions;
-        lblNetAmount.setText(String.format("Neto a Pagar: $ %.2f", netAmount));
+        lblNetAmount.setText(String.format("$ %.2f", netAmount));
     }
 
-    private void confirm() {
-        Supplier supplier = (Supplier) cmbSupplier.getSelectedItem();
+    private float parseDecimal(String value) {
+        try {
+            // Aceptar coma como separador decimal (como en órdenes de compra)
+            String cleaned = value.replaceAll("[^0-9,.]", "").replace(",", ".");
+            return Float.parseFloat(cleaned);
+        } catch (NumberFormatException ex) {
+            return 0f;
+        }
+    }
+
+  private void confirm() {
+        Supplier supplier = cmbSupplier.getSelected();
 
         if (supplier == null) {
-            JOptionPane.showMessageDialog(this, "Selecciona un proveedor.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Seleccioná un proveedor.");
             return;
         }
 
         if (selectedVouchersTable.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Selecciona al menos un comprobante.", "Validación", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Seleccioná al menos un comprobante.");
             return;
         }
 
         User currentUser = UserController.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Alerts.error(this, "No hay usuario conectado.");
+            return;
+        }
+
+        
+        boolean hasCertifications = validateSupplierCertifications(supplier);
+        if (!hasCertifications) {
+            boolean continueAnyway = Alerts.confirm(this,
+                "El proveedor no tiene certificaciones de retención vigentes.\n" +
+                "¿Desea continuar con la orden de pago de todas formas?",
+                "Advertencia: Certificaciones Vencidas");
+            if (!continueAnyway) {
+                return;
+            }
+        }
 
         List<VoucherPayment> payments = new ArrayList<>();
         for (int i = 0; i < selectedVouchersTable.getRowCount(); i++) {
-            String montoStr = (String) selectedVouchersTable.getValueAt(i, 2);
-            float monto = Float.parseFloat(montoStr.replaceAll("[^0-9.]", ""));
+            String montoStr = (String) selectedVouchersTable.getValueAt(i, 3);
+            float monto = parseDecimal(montoStr);
 
             Object nroObj = selectedVouchersTable.getValueAt(i, 0);
             int nro = Integer.parseInt(nroObj.toString());
@@ -260,10 +267,27 @@ public class CreatePaymentOrderDialog extends JDialog {
                 currentUser.getId()
             );
 
-            JOptionPane.showMessageDialog(this, "Orden de pago creada correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            Alerts.info(this, "Orden de pago creada correctamente.");
             dispose();
         } catch (EntityNotFoundException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            Alerts.error(this, ex.getMessage());
         }
+    }
+
+    private boolean validateSupplierCertifications(Supplier supplier) {
+        if (supplier.getCertifications() == null || supplier.getCertifications().isEmpty()) {
+            return false;
+        }
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int activeCertifications = 0;
+
+        for (var cert : supplier.getCertifications()) {
+            if (cert.isValid(today)) {
+                activeCertifications++;
+            }
+        }
+
+        return activeCertifications > 0;
     }
 }

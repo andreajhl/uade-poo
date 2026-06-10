@@ -2,18 +2,17 @@ package controllers;
 
 import exceptions.EntityNotFoundException;
 import exceptions.VoucherDeviationException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 import models.Authorization;
 import models.Supplier;
 import models.Voucher;
 import models.VoucherDetail;
 import models.enums.VoucherStatus;
 import models.enums.VoucherType;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
 
 public class VoucherController {
 
@@ -152,4 +151,13 @@ public class VoucherController {
                 || type == VoucherType.FACTURA_B
                 || type == VoucherType.FACTURA_C;
     }
+    public List<Voucher> findPendingBySupplier(UUID supplierId) {
+    List<Voucher> result = new ArrayList<>();
+    for (Voucher v : findBySupplier(supplierId)) {
+        if (v.getStatus() == VoucherStatus.PENDING) {
+            result.add(v);
+        }
+    }
+    return result;
+}
 }

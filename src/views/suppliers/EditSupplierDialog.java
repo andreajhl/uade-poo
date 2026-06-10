@@ -136,22 +136,32 @@ public class EditSupplierDialog extends AppDialog {
             Alerts.warn(this, "Complete todos los campos obligatorios (*).");
             return;
         }
+
         if (!cuit.matches("^\\d{2}-\\d{8}-\\d{1}$")) {
             Alerts.warn(this, "El CUIT debe tener el formato XX-XXXXXXXX-X (ej: 20-12345678-3).");
             return;
         }
+
+        if (!ingresosBrutos.matches("[0-9]+") || ingresosBrutos.length() < 3) {
+            Alerts.warn(this, "El número de Ingresos Brutos debe contener solo dígitos y tener al menos 3 caracteres.");
+            return;
+        }
+
         if (razonSocial.length() < 3 || fantasyName.length() < 3 || address.length() < 3) {
             Alerts.warn(this, "Razón Social, Nombre Fantasía y Domicilio deben tener al menos 3 caracteres.");
             return;
         }
+
         if (!phone.matches("[0-9-]+") || phone.replaceAll("-", "").length() < 11) {
             Alerts.warn(this, "El Teléfono debe contener solo dígitos y tener al menos 11 dígitos.");
             return;
         }
+
         if (!email.isEmpty() && !isValidEmail(email)) {
             Alerts.warn(this, "El Email debe tener el formato test@gmail.com.");
             return;
         }
+
         if (selectedCategories.isEmpty()) {
             Alerts.warn(this, "Agregá al menos un rubro.");
             return;

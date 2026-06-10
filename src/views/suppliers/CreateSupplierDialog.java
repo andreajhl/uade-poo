@@ -155,8 +155,8 @@ public class CreateSupplierDialog extends AppDialog {
             Alerts.warn(this, "El Email debe tener el formato test@gmail.com.");
             return;
         }
-        if (ingresosBrutos.length() < 3) {
-            Alerts.warn(this, "El número de Ingresos Brutos debe tener al menos 3 caracteres.");
+        if (!ingresosBrutos.matches("[0-9]+") || ingresosBrutos.length() < 3) {
+            Alerts.warn(this, "El número de Ingresos Brutos debe contener solo dígitos y tener al menos 3 caracteres.");
             return;
         }
         if (selectedCategories.isEmpty()) {

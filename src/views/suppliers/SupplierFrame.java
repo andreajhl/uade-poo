@@ -14,12 +14,19 @@ public class SupplierFrame extends AppFrame {
 
     private final AppTable table;
     private AppButton btnEdit;
+    private AppButton btnCertifications;
 
     public SupplierFrame() {
         table = new AppTable(new String[]{"CUIT", "Razón Social", "Condición IVA", "Tope Crédito", "Deuda Total", "Cant. OCs", "Rubros"});
+        
         table.getTable().getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) btnEdit.setEnabled(table.getSelectedRow() >= 0);
+            if (!e.getValueIsAdjusting()) {
+                boolean selected = table.getSelectedRow() >= 0;
+                btnEdit.setEnabled(selected);
+                btnCertifications.setEnabled(selected);
+            }
         });
+
         initToolbar();
         addCenter(table);
         refresh();
@@ -29,9 +36,13 @@ public class SupplierFrame extends AppFrame {
         btnEdit = new AppButton("Editar", this::openEditDialog);
         btnEdit.setEnabled(false);
 
+        btnCertifications = new AppButton("Certificados", this::openCertificationsDialog);
+        btnCertifications.setEnabled(false);
+
         ToolbarPanel toolbar = new ToolbarPanel();
         toolbar.add(ButtonBar.primary("Nuevo Proveedor", this::openCreateDialog));
         toolbar.add(btnEdit);
+        toolbar.add(btnCertifications);
         addNorth(toolbar);
     }
 
@@ -43,18 +54,36 @@ public class SupplierFrame extends AppFrame {
 
     private void openEditDialog() {
         int row = table.getSelectedRow();
+
         if (row < 0) return;
+
         List<Supplier> suppliers = SupplierController.getInstance().findAll();
+
         if (row >= suppliers.size()) return;
+
         EditSupplierDialog dialog = new EditSupplierDialog(suppliers.get(row));
         dialog.setVisible(true);
         refresh();
+    }
+
+    private void openCertificationsDialog() {
+        int row = table.getSelectedRow();
+
+        if (row < 0) return;
+
+        List<Supplier> suppliers = SupplierController.getInstance().findAll();
+
+        if (row >= suppliers.size()) return;
+
+        ManageCertificationsDialog dialog = new ManageCertificationsDialog(suppliers.get(row));
+        dialog.setVisible(true);
     }
 
     public void refresh() {
         table.clearRows();
         List<Supplier> suppliers = SupplierController.getInstance().findAll();
         SupplierController ctrl = SupplierController.getInstance();
+
         for (Supplier s : suppliers) {
             table.addRow(new Object[]{
                 s.getCuit(),

@@ -1,8 +1,9 @@
 package controllers;
 
 import exceptions.EntityNotFoundException;
-import models.Category;
+import models.CertificationRetention;
 import models.Supplier;
+import models.enums.Category;
 import models.enums.IVACondition;
 
 import java.time.LocalDate;
@@ -50,6 +51,42 @@ public class SupplierController {
 
     public void removeCategory(UUID supplierId, Category category) throws EntityNotFoundException {
         findById(supplierId).removeCategory(category);
+    }
+
+    public float getTotalDebt(UUID supplierId) {
+        float debt = 0f;
+        for (var oc : PurchaseOrderController.getInstance().findBySupplier(supplierId)) {
+            debt += oc.getTotal();
+        }
+        return debt;
+    }
+
+    public int getPurchaseCount(UUID supplierId) {
+        return PurchaseOrderController.getInstance().findBySupplier(supplierId).size();
+    }
+
+    public void update(UUID id, String cuit, String razonSocial, String fantasyName,
+                       String address, String phone, String email,
+                       IVACondition ivaCondition, String ingresosBrutos,
+                       LocalDate activityStartDate, float creditLimit,
+                       List<Category> categories) throws EntityNotFoundException {
+        Supplier s = findById(id);
+        s.setCuit(cuit);
+        s.setRazonSocial(razonSocial);
+        s.setFantasyName(fantasyName);
+        s.setAddress(address);
+        s.setPhone(phone);
+        s.setEmail(email);
+        s.setIvaCondition(ivaCondition);
+        s.setIngresosBrutos(ingresosBrutos);
+        s.setActivityStartDate(activityStartDate);
+        s.setCreditLimit(creditLimit);
+        s.getCategories().clear();
+        for (Category cat : categories) s.addCategory(cat);
+    }
+
+    public void addCertification(UUID supplierId, CertificationRetention certification) throws EntityNotFoundException {
+        findById(supplierId).addCertification(certification);
     }
 
     public void delete(UUID id) throws EntityNotFoundException {

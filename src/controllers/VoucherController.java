@@ -2,17 +2,18 @@ package controllers;
 
 import exceptions.EntityNotFoundException;
 import exceptions.VoucherDeviationException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
 import models.Authorization;
 import models.Supplier;
 import models.Voucher;
 import models.VoucherDetail;
 import models.enums.VoucherStatus;
 import models.enums.VoucherType;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public class VoucherController {
 
@@ -30,58 +31,69 @@ public class VoucherController {
         return instance;
     }
 
-    public Voucher registerVoucher(UUID supplierId, VoucherType type, LocalDate issueDate,
-                                   List<VoucherDetail> details, List<UUID> relatedOrderIds)
+    public Voucher registerDebitNote(UUID supplierId, LocalDate issueDate,
+                                     List<VoucherDetail> details, UUID relatedOrderId)
+            throws EntityNotFoundException {
+
+        Supplier supplier = SupplierController.getInstance().findById(supplierId);
+        Voucher voucher = new Voucher(nextNumber, VoucherType.NOTA_DEBITO, issueDate, supplier);
+
+        for (VoucherDetail d : details) voucher.addDetail(d);
+
+        voucher.addRelatedOrder(PurchaseOrderController.getInstance().findById(relatedOrderId));
+        vouchers.put(voucher.getId(), voucher);
+
+        nextNumber++;
+        return voucher;
+    }
+
+    public Voucher registerInvoice(UUID supplierId, VoucherType type, LocalDate issueDate,
+                                    List<VoucherDetail> details, UUID relatedDebitNoteId)
             throws EntityNotFoundException, VoucherDeviationException {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
-        Voucher voucher = buildVoucher(supplier, type, issueDate, details, relatedOrderIds);
-
-        boolean isInvoice = type == VoucherType.FACTURA_A
-                || type == VoucherType.FACTURA_B
-                || type == VoucherType.FACTURA_C;
-
-        if (isInvoice && relatedOrderIds.isEmpty()) {
-            throw new VoucherDeviationException(
-                    "El comprobante no tiene una orden de compra asociada. Se requiere autorización de supervisor.");
-        }
-
-        if (isInvoice && voucher.hasPriceDeviation()) {
-            throw new VoucherDeviationException(
-                    "Se detectaron diferencias de precio respecto a la orden de compra. Se requiere autorización de supervisor.");
-        }
-
-        vouchers.put(voucher.getId(), voucher);
-        nextNumber++;
-        return voucher;
-    }
-
-    public Voucher registerVoucherWithAuthorization(UUID supplierId, VoucherType type, LocalDate issueDate,
-                                                    List<VoucherDetail> details, List<UUID> relatedOrderIds,
-                                                    Authorization authorization)
-            throws EntityNotFoundException {
-
-        Supplier supplier = SupplierController.getInstance().findById(supplierId);
-        Voucher voucher = buildVoucher(supplier, type, issueDate, details, relatedOrderIds);
-        voucher.setAuthorization(authorization);
-        vouchers.put(voucher.getId(), voucher);
-        nextNumber++;
-        return voucher;
-    }
-
-    private Voucher buildVoucher(Supplier supplier, VoucherType type, LocalDate issueDate,
-                                 List<VoucherDetail> details, List<UUID> relatedOrderIds)
-            throws EntityNotFoundException {
+        Voucher debitNote = findById(relatedDebitNoteId);
 
         Voucher voucher = new Voucher(nextNumber, type, issueDate, supplier);
         for (VoucherDetail d : details) voucher.addDetail(d);
+        voucher.setRelatedDebitNote(debitNote);
+        for (var oc : debitNote.getRelatedOrders()) voucher.addRelatedOrder(oc);
 
-        PurchaseOrderController poc = PurchaseOrderController.getInstance();
-        for (UUID ocId : relatedOrderIds) {
-            voucher.addRelatedOrder(poc.findById(ocId));
+        if (voucher.hasPriceDeviation()) {
+            throw new VoucherDeviationException(
+                    "Se detectaron diferencias de precio respecto a la nota de débito. Se requiere autorización.");
         }
 
+        vouchers.put(voucher.getId(), voucher);
+        nextNumber++;
         return voucher;
+    }
+
+    public Voucher registerInvoiceWithAuthorization(UUID supplierId, VoucherType type, LocalDate issueDate,
+                                                     List<VoucherDetail> details, UUID relatedDebitNoteId,
+                                                     Authorization authorization)
+            throws EntityNotFoundException {
+
+        Supplier supplier = SupplierController.getInstance().findById(supplierId);
+        Voucher debitNote = findById(relatedDebitNoteId);
+
+        Voucher voucher = new Voucher(nextNumber, type, issueDate, supplier);
+        for (VoucherDetail d : details) voucher.addDetail(d);
+        voucher.setRelatedDebitNote(debitNote);
+        for (var oc : debitNote.getRelatedOrders()) voucher.addRelatedOrder(oc);
+        voucher.setAuthorization(authorization);
+
+        vouchers.put(voucher.getId(), voucher);
+        nextNumber++;
+        return voucher;
+    }
+
+    public List<Voucher> findDebitNotesBySupplier(UUID supplierId) {
+        List<Voucher> result = new ArrayList<>();
+        for (Voucher v : findBySupplier(supplierId)) {
+            if (v.getType() == VoucherType.NOTA_DEBITO) result.add(v);
+        }
+        return result;
     }
 
     public List<Voucher> findAll() {
@@ -113,25 +125,31 @@ public class VoucherController {
         return v;
     }
 
+    public List<Voucher> findInvoices(UUID supplierId, LocalDate from, LocalDate to) {
+        List<Voucher> result = new ArrayList<>();
+        for (Voucher v : vouchers.values()) {
+            if (!isInvoiceType(v.getType())) continue;
+            if (supplierId != null && !v.getSupplier().getId().equals(supplierId)) continue;
+            if (from != null && v.getIssueDate().isBefore(from)) continue;
+            if (to != null && v.getIssueDate().isAfter(to)) continue;
+            result.add(v);
+        }
+        result.sort((a, b) -> a.getIssueDate().compareTo(b.getIssueDate()));
+        return result;
+    }
+
     public float getTotalInvoicedBySupplierOnDate(UUID supplierId, LocalDate date) {
         float total = 0f;
         for (Voucher v : findBySupplier(supplierId)) {
-            boolean isInvoice = v.getType() == VoucherType.FACTURA_A
-                    || v.getType() == VoucherType.FACTURA_B
-                    || v.getType() == VoucherType.FACTURA_C;
-            if (isInvoice && v.getIssueDate().equals(date)) {
+            if (isInvoiceType(v.getType()) && v.getIssueDate().equals(date))
                 total += v.getGrossTotal();
-            }
         }
         return total;
     }
-       public List<Voucher> findPendingBySupplier(UUID supplierId) {
-        List<Voucher> result = new ArrayList<>();
-        for (Voucher v : findBySupplier(supplierId)) {
-            if (v.getStatus() == VoucherStatus.PENDING) {
-                result.add(v);
-            }
-        }
-        return result;
+
+    private boolean isInvoiceType(VoucherType type) {
+        return type == VoucherType.FACTURA_A
+                || type == VoucherType.FACTURA_B
+                || type == VoucherType.FACTURA_C;
     }
 }

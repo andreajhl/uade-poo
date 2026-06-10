@@ -19,6 +19,7 @@ public class Voucher {
     private final List<PurchaseOrder> relatedOrders;
     private VoucherStatus status;
     private Authorization authorization;
+    private Voucher relatedDebitNote;
 
     public Voucher(int number, VoucherType type, LocalDate issueDate, Supplier supplier) {
         this.id = UUID.randomUUID();
@@ -91,6 +92,10 @@ public class Voucher {
     public Authorization getAuthorization() { return authorization; }
 
     public void setAuthorization(Authorization authorization) { this.authorization = authorization; }
+
+    public Voucher getRelatedDebitNote() { return relatedDebitNote; }
+
+    public void setRelatedDebitNote(Voucher debitNote) { this.relatedDebitNote = debitNote; }
 
     @Override
     public String toString() {

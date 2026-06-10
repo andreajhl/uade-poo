@@ -1,5 +1,6 @@
 package models;
 
+import models.enums.Category;
 import models.enums.IVACondition;
 import models.enums.TaxType;
 

@@ -1,6 +1,7 @@
 package views.suppliers;
 
 import controllers.SupplierController;
+import models.Supplier;
 import models.enums.Category;
 import models.enums.IVACondition;
 import views.components.Alerts;
@@ -19,9 +20,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-public class CreateSupplierDialog extends AppDialog {
+public class EditSupplierDialog extends AppDialog {
+
+    private final Supplier supplier;
 
     private AppTextField txtCuit;
     private AppTextField txtRazonSocial;
@@ -37,25 +39,28 @@ public class CreateSupplierDialog extends AppDialog {
     private AppList<Category> lstCategories;
     private List<Category> selectedCategories;
 
-    public CreateSupplierDialog() {
-        super("Nuevo Proveedor", 480, 560);
-        selectedCategories = new ArrayList<>();
+    public EditSupplierDialog(Supplier supplier) {
+        super("Editar Proveedor — " + supplier.getRazonSocial(), 480, 560);
+        this.supplier = supplier;
+        this.selectedCategories = new ArrayList<>(supplier.getCategories());
         initForm();
         initCategoryPanel();
         initButtons();
     }
 
     private void initForm() {
-        txtCuit = new AppTextField();
-        txtRazonSocial = new AppTextField();
-        txtFantasyName = new AppTextField();
-        txtAddress = new AppTextField();
-        txtPhone = new AppTextField();
-        txtEmail = new AppTextField();
+        txtCuit = new AppTextField(supplier.getCuit());
+        txtRazonSocial = new AppTextField(supplier.getRazonSocial());
+        txtFantasyName = new AppTextField(supplier.getFantasyName());
+        txtAddress = new AppTextField(supplier.getAddress());
+        txtPhone = new AppTextField(supplier.getPhone());
+        txtEmail = new AppTextField(supplier.getEmail() != null ? supplier.getEmail() : "");
         cmbIvaCondition = new AppComboBox<>(IVACondition.values());
-        txtIngresosBrutos = new AppTextField();
+        cmbIvaCondition.setSelectedItem(supplier.getIvaCondition());
+        txtIngresosBrutos = new AppTextField(supplier.getIngresosBrutos());
         txtActivityStartDate = new PlaceholderTextField("yyyy-MM-dd");
-        txtCreditLimit = new AppTextField("0");
+        txtActivityStartDate.setText(supplier.getActivityStartDate().toString());
+        txtCreditLimit = new AppTextField(String.format("%.2f", supplier.getCreditLimit()));
 
         FormPanel form = new FormPanel();
         form.addRow("CUIT *", txtCuit);
@@ -75,6 +80,7 @@ public class CreateSupplierDialog extends AppDialog {
     private void initCategoryPanel() {
         cmbCategory = new AppComboBox<>(Category.values());
         lstCategories = new AppList<>();
+        for (Category cat : selectedCategories) lstCategories.addElement(cat);
 
         BorderPanel addRow = new BorderPanel();
         addRow.addCenter(cmbCategory);
@@ -131,34 +137,31 @@ public class CreateSupplierDialog extends AppDialog {
             return;
         }
 
-        if (!isValidCuit(cuit)) {
+        if (!cuit.matches("^\\d{2}-\\d{8}-\\d{1}$")) {
             Alerts.warn(this, "El CUIT debe tener el formato XX-XXXXXXXX-X (ej: 20-12345678-3).");
             return;
         }
-        if (razonSocial.length() < 3) {
-            Alerts.warn(this, "La Razón Social debe tener al menos 3 caracteres.");
-            return;
-        }
-        if (fantasyName.length() < 3) {
-            Alerts.warn(this, "El Nombre Fantasía debe tener al menos 3 caracteres.");
-            return;
-        }
-        if (address.length() < 3) {
-            Alerts.warn(this, "El Domicilio debe tener al menos 3 caracteres.");
-            return;
-        }
-        if (!phone.matches("[0-9-]+") || phone.replaceAll("-", "").length() < 11) {
-            Alerts.warn(this, "El Teléfono debe contener solo dígitos y tener al menos 11 dígitos.");
-            return;
-        }
-        if (!email.isEmpty() && !isValidEmail(email)) {
-            Alerts.warn(this, "El Email debe tener el formato test@gmail.com.");
-            return;
-        }
+
         if (!ingresosBrutos.matches("[0-9]+") || ingresosBrutos.length() < 3) {
             Alerts.warn(this, "El número de Ingresos Brutos debe contener solo dígitos y tener al menos 3 caracteres.");
             return;
         }
+
+        if (razonSocial.length() < 3 || fantasyName.length() < 3 || address.length() < 3) {
+            Alerts.warn(this, "Razón Social, Nombre Fantasía y Domicilio deben tener al menos 3 caracteres.");
+            return;
+        }
+
+        if (!phone.matches("[0-9-]+") || phone.replaceAll("-", "").length() < 11) {
+            Alerts.warn(this, "El Teléfono debe contener solo dígitos y tener al menos 11 dígitos.");
+            return;
+        }
+
+        if (!email.isEmpty() && !isValidEmail(email)) {
+            Alerts.warn(this, "El Email debe tener el formato test@gmail.com.");
+            return;
+        }
+
         if (selectedCategories.isEmpty()) {
             Alerts.warn(this, "Agregá al menos un rubro.");
             return;
@@ -183,24 +186,16 @@ public class CreateSupplierDialog extends AppDialog {
             return;
         }
 
-        UUID supplierId = SupplierController.getInstance().create(
-                cuit, razonSocial, fantasyName, address, phone,
-                email, cmbIvaCondition.getSelected(),
-                ingresosBrutos, activityStartDate, creditLimit
-        ).getId();
-
-        for (Category cat : selectedCategories) {
-            try {
-                SupplierController.getInstance().addCategory(supplierId, cat);
-            } catch (Exception ignored) {}
+        try {
+            SupplierController.getInstance().update(
+                    supplier.getId(), cuit, razonSocial, fantasyName, address, phone,
+                    email, cmbIvaCondition.getSelected(), ingresosBrutos,
+                    activityStartDate, creditLimit, selectedCategories);
+            Alerts.info(this, "Proveedor actualizado correctamente.");
+            dispose();
+        } catch (Exception ex) {
+            Alerts.error(this, ex.getMessage());
         }
-
-        Alerts.info(this, "Proveedor creado correctamente.");
-        dispose();
-    }
-
-    private boolean isValidCuit(String cuit) {
-        return cuit.matches("^\\d{2}-\\d{8}-\\d{1}$");
     }
 
     private boolean isValidEmail(String email) {

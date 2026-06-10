@@ -6,21 +6,18 @@ import models.User;
 import models.enums.Permission;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
-public class SupervisorApprovalDialog extends JDialog {
+public class SupervisorApprovalDialog extends AppDialog {
 
     private JComboBox<User> cmbSupervisor;
     private JTextArea txtObservation;
     private Authorization authorization;
 
-    public SupervisorApprovalDialog(JFrame parent, String reason) {
-        super(parent, "Autorización de Supervisor", true);
-        initComponents(reason);
-        setSize(420, 300);
-        setLocationRelativeTo(parent);
+    public SupervisorApprovalDialog(String reason) {
+        super("Autorización de Supervisor", 420, 300);
         setResizable(false);
+        initComponents(reason);
     }
 
     private void initComponents(String reason) {
@@ -30,34 +27,17 @@ public class SupervisorApprovalDialog extends JDialog {
         txtObservation.setLineWrap(true);
         txtObservation.setWrapStyleWord(true);
 
-        JPanel center = new JPanel(new GridBagLayout());
-        center.setBorder(BorderFactory.createEmptyBorder(12, 16, 8, 16));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 4, 5, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
-
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        center.add(new JLabel("<html><b>Motivo:</b> " + reason + "</html>"), gbc);
-
-        gbc.gridwidth = 1; gbc.weightx = 0;
-        gbc.gridx = 0; gbc.gridy = 1;
-        center.add(new JLabel("Supervisor:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        center.add(cmbSupervisor, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
-        center.add(new JLabel("Observación:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1; gbc.fill = GridBagConstraints.BOTH;
-        center.add(new JScrollPane(txtObservation), gbc);
+        FormPanel form = new FormPanel();
+        form.addFullRow(new JLabel("<html><b>Motivo:</b> " + reason + "</html>"));
+        form.addRow("Supervisor:", cmbSupervisor);
+        form.addRow("Observación:", new JScrollPane(txtObservation), true);
 
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Autorizar", this::approve);
 
-        setLayout(new BorderLayout());
-        add(center, BorderLayout.CENTER);
-        add(bar, BorderLayout.SOUTH);
+        addCenter(form);
+        addSouth(bar);
     }
 
     private void approve() {

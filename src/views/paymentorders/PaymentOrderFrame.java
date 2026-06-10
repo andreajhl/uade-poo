@@ -31,8 +31,9 @@ public class PaymentOrderFrame extends JPanel {
 
     private void openCreateDialog() {
         CreatePaymentOrderDialog dialog = new CreatePaymentOrderDialog(
-            (JFrame) SwingUtilities.getWindowAncestor(this)
-        );
+    (JFrame) SwingUtilities.getWindowAncestor(this)
+);
+
         dialog.setVisible(true);
         refresh();
     }

@@ -48,6 +48,10 @@ public class SupplierController {
         findById(supplierId).addCategory(category);
     }
 
+    public void removeCategory(UUID supplierId, Category category) throws EntityNotFoundException {
+        findById(supplierId).removeCategory(category);
+    }
+
     public void delete(UUID id) throws EntityNotFoundException {
         if (!suppliers.containsKey(id)) throw new EntityNotFoundException("Proveedor", id);
         suppliers.remove(id);

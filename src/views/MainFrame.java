@@ -1,53 +1,35 @@
 package views;
 
 import controllers.UserController;
-import java.awt.*;
-import javax.swing.*;
-import views.paymentorders.PaymentOrderFrame;
+import views.components.AppMainFrame;
+import views.components.AppTabs;
+import views.components.StatusBar;
 import views.products.ProductFrame;
 import views.purchaseorders.PurchaseOrderFrame;
 import views.suppliers.SupplierFrame;
 import views.users.SelectUserDialog;
+import views.vouchers.VoucherFrame;
 
-public class MainFrame extends JFrame {
-
-    private JLabel lblCurrentUser;
+public class MainFrame extends AppMainFrame {
 
     public MainFrame() {
-        setTitle("Farmared - Sistema de Gestión de Compras");
-        setSize(900, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        super("Farmared - Sistema de Gestión de Compras", 900, 600);
     }
 
     public boolean requestLogin() {
-        SelectUserDialog dialog = new SelectUserDialog(this);
+        SelectUserDialog dialog = new SelectUserDialog();
         dialog.setVisible(true);
         return dialog.isConfirmed();
     }
 
     public void init() {
-        initStatusBar();
-        initTabs();
-    }
+        addSouth(new StatusBar("  Usuario: " + UserController.getInstance().getCurrentUser().toString()));
 
-    private void initStatusBar() {
-        lblCurrentUser = new JLabel("  Usuario: " + UserController.getInstance().getCurrentUser().toString());
-        lblCurrentUser.setFont(lblCurrentUser.getFont().deriveFont(Font.PLAIN, 12f));
-
-        JPanel statusBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
-        statusBar.add(lblCurrentUser);
-
-        add(statusBar, BorderLayout.SOUTH);
-    }
-
-    private void initTabs() {
-        JTabbedPane tabs = new JTabbedPane();
+        AppTabs tabs = new AppTabs();
         tabs.addTab("Proveedores", new SupplierFrame());
         tabs.addTab("Productos", new ProductFrame());
         tabs.addTab("Órdenes de Compra", new PurchaseOrderFrame());
-        tabs.addTab("Órdenes de Pago", new PaymentOrderFrame());
-        add(tabs, BorderLayout.CENTER);
+        tabs.addTab("Comprobantes", new VoucherFrame());
+        addCenter(tabs);
     }
 }

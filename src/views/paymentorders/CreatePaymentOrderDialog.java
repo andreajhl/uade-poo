@@ -161,12 +161,13 @@ public class CreatePaymentOrderDialog extends JDialog {
     private void moveToSelected() {
         int row = vouchersTable.getSelectedRow();
         if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Selecciona un comprobante.", "Atención", JOptionPane.WARNING_MESSAGE);
+            Alerts.warn(this, "Seleccioná un comprobante.");
             return;
         }
 
         Object nro = vouchersTable.getValueAt(row, 0);
-        Object monto = vouchersTable.getValueAt(row, 2);
+        Object tipo = vouchersTable.getValueAt(row, 1);
+        Object monto = vouchersTable.getValueAt(row, 3);
 
         selectedVouchersTable.addRow(new Object[]{
             nro,

@@ -1,40 +1,46 @@
 package views.purchaseorders;
 
+import controllers.ProductController;
 import controllers.PurchaseOrderController;
+import controllers.SupplierController;
 import models.PurchaseOrder;
+import views.components.AppButton;
+import views.components.AppFrame;
 import views.components.AppTable;
-import views.components.ButtonBar;
+import views.components.ToolbarPanel;
 
-import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
-public class PurchaseOrderFrame extends JPanel {
+public class PurchaseOrderFrame extends AppFrame {
 
     private final AppTable table;
+    private AppButton btnNew;
 
     public PurchaseOrderFrame() {
-        setLayout(new BorderLayout());
         table = new AppTable(new String[]{"N°", "Fecha", "Proveedor", "Total"});
         initToolbar();
-        add(table, BorderLayout.CENTER);
+        addCenter(table);
         refresh();
     }
 
     private void initToolbar() {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        toolbar.add(ButtonBar.primary("Nueva Orden de Compra", this::openCreateDialog));
-        add(toolbar, BorderLayout.NORTH);
+        btnNew = AppButton.primary("Nueva Orden de Compra", this::openCreateDialog);
+        ToolbarPanel toolbar = new ToolbarPanel();
+        toolbar.add(btnNew);
+        addNorth(toolbar);
     }
 
     private void openCreateDialog() {
-        CreatePurchaseOrderDialog dialog = new CreatePurchaseOrderDialog(
-                (JFrame) SwingUtilities.getWindowAncestor(this));
+        CreatePurchaseOrderDialog dialog = new CreatePurchaseOrderDialog();
         dialog.setVisible(true);
         refresh();
     }
 
     public void refresh() {
+        btnNew.setEnabled(
+            !SupplierController.getInstance().findAll().isEmpty()
+            && !ProductController.getInstance().findAll().isEmpty()
+        );
         table.clearRows();
         List<PurchaseOrder> orders = PurchaseOrderController.getInstance().findAll();
         for (PurchaseOrder o : orders) {

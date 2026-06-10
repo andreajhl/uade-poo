@@ -10,6 +10,7 @@ import models.Product;
 import models.PurchaseOrder;
 import models.PurchaseOrderDetail;
 import models.Supplier;
+import models.Voucher;
 import models.VoucherDetail;
 import models.enums.VoucherType;
 import views.components.Alerts;
@@ -28,7 +29,6 @@ import views.components.SupervisorApprovalDialog;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +37,11 @@ public class CreateVoucherDialog extends AppDialog {
     private AppComboBox<Supplier> cmbSupplier;
     private AppComboBox<VoucherType> cmbType;
     private PlaceholderTextField txtDate;
+
+    private BorderPanel pnlOCRef;
+    private BorderPanel pnlNDRef;
     private AppComboBox<PurchaseOrder> cmbRelatedOC;
+    private AppComboBox<Voucher> cmbRelatedND;
 
     private AppComboBox<Product> cmbProduct;
     private AppTextField txtQuantity;
@@ -51,10 +55,11 @@ public class CreateVoucherDialog extends AppDialog {
     private final List<VoucherDetail> details = new ArrayList<>();
 
     public CreateVoucherDialog() {
-        super("Nuevo Comprobante", 660, 600);
+        super("Nuevo Comprobante", 660, 640);
         initHeaderPanel();
         initItemsPanel();
         initButtons();
+        onTypeChanged();
     }
 
     private void initHeaderPanel() {
@@ -63,18 +68,28 @@ public class CreateVoucherDialog extends AppDialog {
         cmbSupplier.onSelectionChanged(this::onSupplierChanged);
 
         cmbType = new AppComboBox<>(VoucherType.values());
+        cmbType.onSelectionChanged(this::onTypeChanged);
 
         txtDate = new PlaceholderTextField("yyyy-MM-dd");
 
         cmbRelatedOC = new AppComboBox<>();
-        refreshOCCombo();
         cmbRelatedOC.onSelectionChanged(this::refreshPriceHint);
+        pnlOCRef = new BorderPanel();
+        pnlOCRef.addCenter(cmbRelatedOC);
+
+        cmbRelatedND = new AppComboBox<>();
+        pnlNDRef = new BorderPanel();
+        pnlNDRef.addCenter(cmbRelatedND);
 
         FormPanel form = new FormPanel("Datos del comprobante");
         form.addRow("Proveedor *", cmbSupplier);
         form.addRow("Tipo *", cmbType);
         form.addRow("Fecha *", txtDate);
-        form.addRow("OC asociada", cmbRelatedOC);
+        form.addRow("OC asociada *", pnlOCRef);
+        form.addRow("Nota de Débito *", pnlNDRef);
+
+        refreshOCCombo();
+        refreshNDCombo();
 
         addNorth(form);
     }
@@ -124,22 +139,44 @@ public class CreateVoucherDialog extends AppDialog {
         addSouth(bar);
     }
 
+    private void onTypeChanged() {
+        if (pnlOCRef == null || pnlNDRef == null) return;
+        VoucherType type = cmbType.getSelected();
+        boolean isND = type == VoucherType.NOTA_DEBITO;
+        boolean isInvoice = type == VoucherType.FACTURA_A
+                || type == VoucherType.FACTURA_B
+                || type == VoucherType.FACTURA_C;
+
+        pnlOCRef.setVisible(isND);
+        pnlNDRef.setVisible(isInvoice);
+    }
+
     private void onSupplierChanged() {
         refreshOCCombo();
+        refreshNDCombo();
         refreshPriceHint();
     }
 
     private void refreshOCCombo() {
         Supplier supplier = cmbSupplier.getSelected();
         cmbRelatedOC.removeAllItems();
-        cmbRelatedOC.addItem(null);
         if (supplier == null) return;
         for (PurchaseOrder oc : PurchaseOrderController.getInstance().findBySupplier(supplier.getId())) {
             cmbRelatedOC.addItem(oc);
         }
     }
 
+    private void refreshNDCombo() {
+        Supplier supplier = cmbSupplier.getSelected();
+        cmbRelatedND.removeAllItems();
+        if (supplier == null) return;
+        for (Voucher nd : VoucherController.getInstance().findDebitNotesBySupplier(supplier.getId())) {
+            cmbRelatedND.addItem(nd);
+        }
+    }
+
     private void refreshPriceHint() {
+        if (cmbProduct == null) return;
         Product product = cmbProduct.getSelected();
         if (product == null) return;
 
@@ -178,10 +215,10 @@ public class CreateVoucherDialog extends AppDialog {
 
         float unitPrice;
         try {
-            unitPrice = Float.parseFloat(txtUnitPrice.getText().trim());
+            unitPrice = Float.parseFloat(txtUnitPrice.getText().trim().replace(",", "."));
             if (unitPrice < 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            Alerts.warn(this, "El precio unitario debe ser un número válido.");
+            Alerts.warn(this, "El precio unitario debe ser un número válido mayor o igual a 0.");
             return;
         }
 
@@ -229,6 +266,11 @@ public class CreateVoucherDialog extends AppDialog {
 
         VoucherType type = cmbType.getSelected();
 
+        if (type == VoucherType.NOTA_CREDITO) {
+            Alerts.warn(this, "La Nota de Crédito requiere una Orden de Pago. Funcionalidad disponible próximamente.");
+            return;
+        }
+
         LocalDate issueDate;
         try {
             String dateText = txtDate.getValue();
@@ -241,39 +283,62 @@ public class CreateVoucherDialog extends AppDialog {
 
         if (details.isEmpty()) { Alerts.warn(this, "Agregá al menos un ítem."); return; }
 
-        PurchaseOrder selectedOC = cmbRelatedOC.getSelected();
-        List<UUID> relatedIds = selectedOC != null
-                ? Collections.singletonList(selectedOC.getId())
-                : Collections.emptyList();
+        boolean isInvoice = type == VoucherType.FACTURA_A
+                || type == VoucherType.FACTURA_B
+                || type == VoucherType.FACTURA_C;
 
-        try {
-            VoucherController.getInstance().registerVoucher(
-                    supplier.getId(), type, issueDate, details, relatedIds);
-            Alerts.info(this, "Comprobante registrado correctamente.");
-            dispose();
-
-        } catch (VoucherDeviationException ex) {
-            boolean wantsAuth = Alerts.confirm(this,
-                    ex.getMessage() + "\n\n¿Desea solicitar autorización de supervisor para continuar?",
-                    "Requiere Autorización");
-            if (!wantsAuth) return;
-
-            SupervisorApprovalDialog approval = new SupervisorApprovalDialog(ex.getMessage());
-            approval.setVisible(true);
-
-            if (!approval.isApproved()) return;
-
-            try {
-                VoucherController.getInstance().registerVoucherWithAuthorization(
-                        supplier.getId(), type, issueDate, details, relatedIds, approval.getAuthorization());
-                Alerts.info(this, "Comprobante registrado con autorización.");
-                dispose();
-            } catch (EntityNotFoundException e) {
-                Alerts.error(this, e.getMessage());
+        if (type == VoucherType.NOTA_DEBITO) {
+            PurchaseOrder oc = cmbRelatedOC.getSelected();
+            if (oc == null) {
+                Alerts.warn(this, "La Nota de Débito debe estar asociada a una Orden de Compra.");
+                return;
             }
+            try {
+                VoucherController.getInstance().registerDebitNote(
+                        supplier.getId(), issueDate, details, oc.getId());
+                Alerts.info(this, "Nota de Débito registrada correctamente.");
+                dispose();
+            } catch (EntityNotFoundException ex) {
+                Alerts.error(this, ex.getMessage());
+            }
+            return;
+        }
 
-        } catch (EntityNotFoundException ex) {
-            Alerts.error(this, ex.getMessage());
+        if (isInvoice) {
+            Voucher nd = cmbRelatedND.getSelected();
+            if (nd == null) {
+                Alerts.warn(this, "La Factura debe originarse a partir de una Nota de Débito.");
+                return;
+            }
+            UUID ndId = nd.getId();
+            try {
+                VoucherController.getInstance().registerInvoice(
+                        supplier.getId(), type, issueDate, details, ndId);
+                Alerts.info(this, "Factura registrada correctamente.");
+                dispose();
+
+            } catch (VoucherDeviationException ex) {
+                boolean wantsAuth = Alerts.confirm(this,
+                        ex.getMessage() + "\n\n¿Desea solicitar autorización de supervisor?",
+                        "Requiere Autorización");
+                if (!wantsAuth) return;
+
+                SupervisorApprovalDialog approval = new SupervisorApprovalDialog(ex.getMessage());
+                approval.setVisible(true);
+                if (!approval.isApproved()) return;
+
+                try {
+                    VoucherController.getInstance().registerInvoiceWithAuthorization(
+                            supplier.getId(), type, issueDate, details, ndId, approval.getAuthorization());
+                    Alerts.info(this, "Factura registrada con autorización.");
+                    dispose();
+                } catch (EntityNotFoundException e) {
+                    Alerts.error(this, e.getMessage());
+                }
+
+            } catch (EntityNotFoundException ex) {
+                Alerts.error(this, ex.getMessage());
+            }
         }
     }
 }

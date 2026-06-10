@@ -1,9 +1,9 @@
 package controllers;
 
 import exceptions.EntityNotFoundException;
-import models.Category;
 import models.Product;
 import models.ProductSupplier;
+import models.enums.Category;
 import models.enums.TaxType;
 import models.enums.UnitOfMeasure;
 
@@ -41,6 +41,16 @@ public class ProductController {
 
     public List<Product> findAll() {
         return new ArrayList<>(products.values());
+    }
+
+    public void update(UUID id, String code, String description, UnitOfMeasure unitOfMeasure,
+                       TaxType taxType, Category category) throws EntityNotFoundException {
+        Product p = findById(id);
+        p.setCode(code);
+        p.setDescription(description);
+        p.setUnitOfMeasure(unitOfMeasure);
+        p.setTaxType(taxType);
+        p.setCategory(category);
     }
 
     public void setSupplierPrice(UUID productId, UUID supplierId, float price, Category category)

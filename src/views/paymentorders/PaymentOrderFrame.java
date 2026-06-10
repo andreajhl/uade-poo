@@ -1,13 +1,12 @@
 package views.paymentorders;
 
 import controllers.PaymentOrderController;
+import java.awt.*;
+import java.util.List;
+import javax.swing.*;
 import models.PaymentOrder;
 import views.components.AppTable;
 import views.components.ButtonBar;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.List;
 
 public class PaymentOrderFrame extends JPanel {
 

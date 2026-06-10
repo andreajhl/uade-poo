@@ -5,18 +5,18 @@ import controllers.SupplierController;
 import controllers.UserController;
 import controllers.VoucherController;
 import exceptions.EntityNotFoundException;
-import models.Supplier;
-import models.User;
-import models.Voucher;
-import models.VoucherPayment;
-import views.components.AppTable;
-import views.components.ButtonBar;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import javax.swing.*;
+import models.Supplier;
+import models.User;
+import models.Voucher;
+import models.VoucherPayment;
+import views.components.Alerts;
+import views.components.AppTable;
+import views.components.ButtonBar;
 
 public class CreatePaymentOrderDialog extends JDialog {
 
@@ -149,7 +149,8 @@ public class CreatePaymentOrderDialog extends JDialog {
                 vouchersTable.addRow(new Object[]{
                     v.getNumber(),
                     v.getIssueDate(),
-                    String.format("$ %.2f", v.getTotal()),
+                    String.format("$ %.2f", v.getGrossTotal()),
+
                     v.getStatus().name()
                 });
             }

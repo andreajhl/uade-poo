@@ -1,5 +1,6 @@
 package models;
 
+import models.enums.Category;
 import models.enums.TaxType;
 import models.enums.UnitOfMeasure;
 

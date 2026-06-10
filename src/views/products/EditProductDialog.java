@@ -1,6 +1,7 @@
 package views.products;
 
 import controllers.ProductController;
+import models.Product;
 import models.enums.Category;
 import models.enums.TaxType;
 import models.enums.UnitOfMeasure;
@@ -11,7 +12,9 @@ import views.components.AppTextField;
 import views.components.ButtonBar;
 import views.components.FormPanel;
 
-public class CreateProductDialog extends AppDialog {
+public class EditProductDialog extends AppDialog {
+
+    private final Product product;
 
     private AppTextField txtCode;
     private AppTextField txtDescription;
@@ -19,18 +22,22 @@ public class CreateProductDialog extends AppDialog {
     private AppComboBox<TaxType> cmbTaxType;
     private AppComboBox<Category> cmbCategory;
 
-    public CreateProductDialog() {
-        super("Nuevo Producto", 400, 300);
+    public EditProductDialog(Product product) {
+        super("Editar Producto — " + product.getDescription(), 400, 300);
+        this.product = product;
         initForm();
         initButtons();
     }
 
     private void initForm() {
-        txtCode = new AppTextField();
-        txtDescription = new AppTextField();
+        txtCode = new AppTextField(product.getCode());
+        txtDescription = new AppTextField(product.getDescription());
         cmbUnitOfMeasure = new AppComboBox<>(UnitOfMeasure.values());
+        cmbUnitOfMeasure.setSelectedItem(product.getUnitOfMeasure());
         cmbTaxType = new AppComboBox<>(TaxType.values());
+        cmbTaxType.setSelectedItem(product.getTaxType());
         cmbCategory = new AppComboBox<>(Category.values());
+        cmbCategory.setSelectedItem(product.getCategory());
 
         FormPanel form = new FormPanel();
         form.addRow("Código *", txtCode);
@@ -58,13 +65,16 @@ public class CreateProductDialog extends AppDialog {
             return;
         }
 
-        ProductController.getInstance().create(
-                code, description,
-                cmbUnitOfMeasure.getSelected(),
-                cmbTaxType.getSelected(),
-                cmbCategory.getSelected()
-        );
-        Alerts.info(this, "Producto creado correctamente.");
-        dispose();
+        try {
+            ProductController.getInstance().update(
+                    product.getId(), code, description,
+                    cmbUnitOfMeasure.getSelected(),
+                    cmbTaxType.getSelected(),
+                    cmbCategory.getSelected());
+            Alerts.info(this, "Producto actualizado correctamente.");
+            dispose();
+        } catch (Exception ex) {
+            Alerts.error(this, ex.getMessage());
+        }
     }
 }

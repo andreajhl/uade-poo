@@ -17,7 +17,7 @@ public class PurchaseOrderFrame extends AppFrame {
     private AppButton btnNew;
 
     public PurchaseOrderFrame() {
-        table = new AppTable(new String[]{"N°", "Fecha", "Proveedor", "Total"});
+        table = new AppTable(new String[]{"N°", "Fecha", "Proveedor", "Total", "Supervisor", "Fecha Auth.", "Estado Auth."});
         initToolbar();
         addCenter(table);
         refresh();
@@ -44,11 +44,15 @@ public class PurchaseOrderFrame extends AppFrame {
         table.clearRows();
         List<PurchaseOrder> orders = PurchaseOrderController.getInstance().findAll();
         for (PurchaseOrder o : orders) {
+            boolean hasAuth = o.getAuthorization() != null;
             table.addRow(new Object[]{
                 o.getNumber(),
                 o.getIssueDate(),
                 o.getSupplier().getRazonSocial(),
-                String.format("$ %.2f", o.getTotal())
+                String.format("$ %.2f", o.getTotal()),
+                hasAuth ? o.getAuthorization().getAuthorizedBy().toString() : "—",
+                hasAuth ? o.getAuthorization().getAuthorizationDate().toString() : "—",
+                hasAuth ? "Aprobado" : "Sin autorización"
             });
         }
     }

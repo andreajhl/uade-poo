@@ -1,5 +1,7 @@
 package models;
 
+import models.enums.Category;
+
 import java.util.UUID;
 
 public class ProductSupplier {

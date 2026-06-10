@@ -49,16 +49,31 @@ public class CreatePurchaseOrderDialog extends AppDialog {
     private void initSupplierPanel() {
         cmbSupplier = new AppComboBox<>();
         for (Supplier s : SupplierController.getInstance().findAll()) cmbSupplier.addItem(s);
-        cmbSupplier.onSelectionChanged(this::refreshUnitPrice);
+        cmbSupplier.onSelectionChanged(this::onSupplierChanged);
 
         FormPanel form = new FormPanel("Proveedor");
         form.addRow("Proveedor:", cmbSupplier);
         addNorth(form);
     }
 
+    private void onSupplierChanged() {
+        refreshProductList();
+        refreshUnitPrice();
+    }
+
+    private void refreshProductList() {
+        cmbProduct.removeAllItems();
+        Supplier supplier = cmbSupplier.getSelected();
+        if (supplier == null) return;
+        for (Product p : ProductController.getInstance().findAll()) {
+            if (supplier.getCategories().contains(p.getCategory())) {
+                cmbProduct.addItem(p);
+            }
+        }
+    }
+
     private void initItemPanel() {
         cmbProduct = new AppComboBox<>();
-        for (Product p : ProductController.getInstance().findAll()) cmbProduct.addItem(p);
         cmbProduct.onSelectionChanged(this::refreshUnitPrice);
 
         txtQuantity = new AppTextField("1");
@@ -76,6 +91,7 @@ public class CreatePurchaseOrderDialog extends AppDialog {
         form.addFullRow(ButtonBar.primary("Agregar ítem", this::addDetail));
 
         addCenter(form);
+        refreshProductList();
         refreshUnitPrice();
     }
 
@@ -112,7 +128,7 @@ public class CreatePurchaseOrderDialog extends AppDialog {
     private void refreshItemSubtotal() {
         try {
             int qty = Integer.parseInt(txtQuantity.getText().trim());
-            float price = Float.parseFloat(txtUnitPrice.getText().trim());
+            float price = Float.parseFloat(txtUnitPrice.getText().trim().replace(",", "."));
             lblItemSubtotal.setText(String.format("$ %.2f", qty * price));
         } catch (NumberFormatException e) {
             lblItemSubtotal.setText("$ -");
@@ -141,7 +157,7 @@ public class CreatePurchaseOrderDialog extends AppDialog {
 
         float unitPrice;
         try {
-            unitPrice = Float.parseFloat(txtUnitPrice.getText().trim());
+            unitPrice = Float.parseFloat(txtUnitPrice.getText().trim().replace(",", "."));
         } catch (NumberFormatException ex) {
             Alerts.warn(this, "El precio unitario debe ser un número válido.");
             return;

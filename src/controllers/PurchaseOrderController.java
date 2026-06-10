@@ -52,6 +52,11 @@ public class PurchaseOrderController {
         order.setAuthorization(authorization);
         order.setStatus(PurchaseOrderStatus.AUTHORIZED);
 
+        float projectedDebt = calculateOutstandingDebt(supplierId) + order.getTotal();
+        if (projectedDebt > supplier.getCreditLimit()) {
+            supplier.setCreditLimit(projectedDebt);
+        }
+
         purchaseOrders.put(order.getId(), order);
         return order;
     }

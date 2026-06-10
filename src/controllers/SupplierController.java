@@ -1,6 +1,7 @@
 package controllers;
 
 import exceptions.EntityNotFoundException;
+import models.CertificationRetention;
 import models.Supplier;
 import models.enums.Category;
 import models.enums.IVACondition;
@@ -82,6 +83,10 @@ public class SupplierController {
         s.setCreditLimit(creditLimit);
         s.getCategories().clear();
         for (Category cat : categories) s.addCategory(cat);
+    }
+
+    public void addCertification(UUID supplierId, CertificationRetention certification) throws EntityNotFoundException {
+        findById(supplierId).addCertification(certification);
     }
 
     public void delete(UUID id) throws EntityNotFoundException {

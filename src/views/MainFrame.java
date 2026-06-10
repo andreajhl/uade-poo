@@ -8,6 +8,7 @@ import views.products.ProductFrame;
 import views.purchaseorders.PurchaseOrderFrame;
 import views.suppliers.SupplierFrame;
 import views.users.SelectUserDialog;
+import views.reports.ReportsFrame;
 import views.vouchers.VoucherFrame;
 
 public class MainFrame extends AppMainFrame {
@@ -30,6 +31,7 @@ public class MainFrame extends AppMainFrame {
         tabs.addTab("Productos", new ProductFrame());
         tabs.addTab("Órdenes de Compra", new PurchaseOrderFrame());
         tabs.addTab("Comprobantes", new VoucherFrame());
+        tabs.addTab("Consultas", new ReportsFrame());
         addCenter(tabs);
     }
 }

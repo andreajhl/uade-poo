@@ -37,9 +37,12 @@ public class VoucherController {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
         Voucher voucher = new Voucher(nextNumber, VoucherType.NOTA_DEBITO, issueDate, supplier);
+
         for (VoucherDetail d : details) voucher.addDetail(d);
+
         voucher.addRelatedOrder(PurchaseOrderController.getInstance().findById(relatedOrderId));
         vouchers.put(voucher.getId(), voucher);
+
         nextNumber++;
         return voucher;
     }
@@ -122,16 +125,31 @@ public class VoucherController {
         return v;
     }
 
+    public List<Voucher> findInvoices(UUID supplierId, LocalDate from, LocalDate to) {
+        List<Voucher> result = new ArrayList<>();
+        for (Voucher v : vouchers.values()) {
+            if (!isInvoiceType(v.getType())) continue;
+            if (supplierId != null && !v.getSupplier().getId().equals(supplierId)) continue;
+            if (from != null && v.getIssueDate().isBefore(from)) continue;
+            if (to != null && v.getIssueDate().isAfter(to)) continue;
+            result.add(v);
+        }
+        result.sort((a, b) -> a.getIssueDate().compareTo(b.getIssueDate()));
+        return result;
+    }
+
     public float getTotalInvoicedBySupplierOnDate(UUID supplierId, LocalDate date) {
         float total = 0f;
         for (Voucher v : findBySupplier(supplierId)) {
-            boolean isInvoice = v.getType() == VoucherType.FACTURA_A
-                    || v.getType() == VoucherType.FACTURA_B
-                    || v.getType() == VoucherType.FACTURA_C;
-            if (isInvoice && v.getIssueDate().equals(date)) {
+            if (isInvoiceType(v.getType()) && v.getIssueDate().equals(date))
                 total += v.getGrossTotal();
-            }
         }
         return total;
+    }
+
+    private boolean isInvoiceType(VoucherType type) {
+        return type == VoucherType.FACTURA_A
+                || type == VoucherType.FACTURA_B
+                || type == VoucherType.FACTURA_C;
     }
 }

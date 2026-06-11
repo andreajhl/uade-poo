@@ -1,31 +1,31 @@
 package views.paymentorders;
 
 import controllers.PaymentOrderController;
-import java.awt.*;
-import java.util.List;
-import javax.swing.*;
 import models.PaymentOrder;
+import views.components.AppFrame;
 import views.components.AppTable;
 import views.components.ButtonBar;
+import views.components.ToolbarPanel;
 
-public class PaymentOrderFrame extends JPanel {
+import java.util.List;
+
+public class PaymentOrderFrame extends AppFrame {
 
     private final AppTable table;
 
     public PaymentOrderFrame() {
-        setLayout(new BorderLayout());
         table = new AppTable(new String[]{
             "N°", "Fecha", "Proveedor", "Total Facturas", "Retenciones", "Neto", "Estado"
         });
         initToolbar();
-        add(table, BorderLayout.CENTER);
+        addCenter(table);
         refresh();
     }
 
     private void initToolbar() {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        ToolbarPanel toolbar = new ToolbarPanel();
         toolbar.add(ButtonBar.primary("Nueva Orden de Pago", this::openCreateDialog));
-        add(toolbar, BorderLayout.NORTH);
+        addNorth(toolbar);
     }
 
     private void openCreateDialog() {
@@ -34,10 +34,10 @@ public class PaymentOrderFrame extends JPanel {
         refresh();
     }
 
+    @Override
     public void refresh() {
         table.clearRows();
         List<PaymentOrder> orders = PaymentOrderController.getInstance().findAll();
-
         for (PaymentOrder order : orders) {
             table.addRow(new Object[]{
                 order.getNumber(),

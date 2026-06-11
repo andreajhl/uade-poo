@@ -39,14 +39,10 @@ public class PaymentOrderController {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
 
-        // Validar que todos los vouchers sean de tipo permitido y estén PENDING
         for (VoucherPayment vp : voucherPayments) {
             Voucher voucher = VoucherController.getInstance().findById(vp.getVoucherId());
             validateVoucherForPayment(voucher);
         }
-
-        // Validar certificaciones de retención
-        validateRetentionCertifications(supplier);
 
         PaymentOrder order = new PaymentOrder(nextOrderNumber++, supplier, userId);
 
@@ -58,45 +54,40 @@ public class PaymentOrderController {
 
         paymentOrders.put(order.getId(), order);
 
+        updateVoucherStatuses(voucherPayments);
+
         return order;
     }
 
-    private void validateVoucherForPayment(Voucher voucher) throws EntityNotFoundException {
-        // Solo se pueden pagar Facturas (A, B, C) y Notas de Débito
-        boolean isPayableType = voucher.getType() == VoucherType.FACTURA_A
-                || voucher.getType() == VoucherType.FACTURA_B
-                || voucher.getType() == VoucherType.FACTURA_C
-                || voucher.getType() == VoucherType.NOTA_DEBITO;
+    private void updateVoucherStatuses(List<VoucherPayment> voucherPayments) {
+        for (VoucherPayment vp : voucherPayments) {
+            try {
+                Voucher voucher = VoucherController.getInstance().findById(vp.getVoucherId());
 
-        if (!isPayableType) {
-            throw new EntityNotFoundException(
-                "Comprobante inválido", voucher.getId()
-            );
-        }
+                voucher.setStatus(
+                    vp.getAmount() >= voucher.getGrossTotal()
+                        ? VoucherStatus.PAID
+                        : VoucherStatus.PARTIALLY_PAID
+                );
 
-        // Validar que esté PENDING
-        if (voucher.getStatus() != VoucherStatus.PENDING) {
-            throw new EntityNotFoundException(
-                "Comprobante no pendiente", voucher.getId()
-            );
+            } catch (EntityNotFoundException ignored) {}
         }
     }
 
-    private void validateRetentionCertifications(Supplier supplier) {
-        // Advertencia: Si el proveedor no tiene certificaciones vigentes
-        // En versiones futuras, esto podría ser una excepción
-        // Por ahora es solo informativo
-        int activeCertifications = 0;
-        if (supplier.getCertifications() != null) {
-            activeCertifications = (int) supplier.getCertifications().stream()
-                    .filter(c -> c.isValid(java.time.LocalDate.now()))
-                    .count();
+    private void validateVoucherForPayment(Voucher voucher) throws EntityNotFoundException {
+        if (!isPayableType(voucher.getType())) {
+            throw new EntityNotFoundException("Comprobante inválido", voucher.getId());
         }
+        if (voucher.getStatus() != VoucherStatus.PENDING) {
+            throw new EntityNotFoundException("Comprobante no pendiente", voucher.getId());
+        }
+    }
 
-        if (activeCertifications == 0) {
-            // Log o advertencia - en versiones futuras mostrar en UI
-            System.out.println("⚠️ Advertencia: Proveedor sin certificaciones de retención vigentes");
-        }
+    private boolean isPayableType(VoucherType type) {
+        return type == VoucherType.FACTURA_A
+                || type == VoucherType.FACTURA_B
+                || type == VoucherType.FACTURA_C
+                || type == VoucherType.NOTA_DEBITO;
     }
 
     private void applyRetentions(PaymentOrder order) {
@@ -106,6 +97,7 @@ public class PaymentOrderController {
 
         for (TaxRule rule : taxRules) {
             float retentionAmount = rule.calculateRetention(baseAmount);
+
             if (retentionAmount > 0) {
                 Retention retention = new Retention(rule.getTaxType(), retentionAmount);
                 order.addRetention(retention);
@@ -120,13 +112,7 @@ public class PaymentOrderController {
         List<Voucher> pendingPayable = new ArrayList<>();
 
         for (Voucher v : allVouchers) {
-            // Solo Facturas A/B/C y Notas de Débito con estado PENDING
-            boolean isPayableType = v.getType() == VoucherType.FACTURA_A
-                    || v.getType() == VoucherType.FACTURA_B
-                    || v.getType() == VoucherType.FACTURA_C
-                    || v.getType() == VoucherType.NOTA_DEBITO;
-
-            if (isPayableType && v.getStatus() == VoucherStatus.PENDING) {
+            if (isPayableType(v.getType()) && v.getStatus() == VoucherStatus.PENDING) {
                 pendingPayable.add(v);
             }
         }
@@ -136,9 +122,11 @@ public class PaymentOrderController {
 
     public PaymentOrder findById(UUID id) throws EntityNotFoundException {
         PaymentOrder order = paymentOrders.get(id);
+
         if (order == null) {
             throw new EntityNotFoundException("Orden de Pago", id);
         }
+
         return order;
     }
 
@@ -149,10 +137,9 @@ public class PaymentOrderController {
     public List<PaymentOrder> findBySupplier(UUID supplierId) {
         List<PaymentOrder> result = new ArrayList<>();
         for (PaymentOrder order : paymentOrders.values()) {
-            if (order.getSupplier().getId().equals(supplierId)) {
-                result.add(order);
-            }
+            if (order.getSupplier().getId().equals(supplierId)) result.add(order);
         }
+
         return result;
     }
 
@@ -160,6 +147,7 @@ public class PaymentOrderController {
         if (!paymentOrders.containsKey(id)) {
             throw new EntityNotFoundException("Orden de Pago", id);
         }
+
         paymentOrders.remove(id);
     }
 }

@@ -16,8 +16,6 @@ public class PurchaseOrderDetailDialog extends AppDialog {
         FormPanel header = new FormPanel("Datos generales");
         header.addRow("Proveedor:", new InfoLabel(order.getSupplier().getRazonSocial()));
         header.addRow("Fecha:", new InfoLabel(order.getIssueDate().toString()));
-        header.addRow("Estado:", new InfoLabel(order.getStatus().name()));
-
         if (order.getAuthorization() != null) {
             header.addRow("Autorizado por:", new InfoLabel(order.getAuthorization().getAuthorizedBy().toString()));
             header.addRow("Fecha autorización:", new InfoLabel(order.getAuthorization().getAuthorizationDate().toString()));

@@ -1,7 +1,5 @@
 package models;
 
-import models.enums.PurchaseOrderStatus;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +15,6 @@ public class PurchaseOrder {
     private UUID userId;
     private float total;
     private Authorization authorization;
-    private PurchaseOrderStatus status;
 
     public PurchaseOrder(int number, Supplier supplier, UUID userId) {
         this.id = UUID.randomUUID();
@@ -27,7 +24,7 @@ public class PurchaseOrder {
         this.userId = userId;
         this.details = new ArrayList<>();
         this.total = 0f;
-        this.status = PurchaseOrderStatus.PENDING;
+
     }
 
     public void addDetail(PurchaseOrderDetail detail) {
@@ -67,10 +64,6 @@ public class PurchaseOrder {
     public Authorization getAuthorization() { return authorization; }
 
     public void setAuthorization(Authorization authorization) { this.authorization = authorization; }
-
-    public PurchaseOrderStatus getStatus() { return status; }
-
-    public void setStatus(PurchaseOrderStatus status) { this.status = status; }
 
     @Override
     public String toString() {

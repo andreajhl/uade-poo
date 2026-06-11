@@ -6,7 +6,6 @@ import models.Authorization;
 import models.PurchaseOrder;
 import models.PurchaseOrderDetail;
 import models.Supplier;
-import models.enums.PurchaseOrderStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +49,6 @@ public class PurchaseOrderController {
         for (PurchaseOrderDetail detail : details) order.addDetail(detail);
 
         order.setAuthorization(authorization);
-        order.setStatus(PurchaseOrderStatus.AUTHORIZED);
 
         float projectedDebt = calculateOutstandingDebt(supplierId) + order.getTotal();
         if (projectedDebt > supplier.getCreditLimit()) {

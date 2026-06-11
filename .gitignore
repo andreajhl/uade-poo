@@ -11,3 +11,5 @@ out/
 
 # VS Code
 .vscode/
+
+.claude/

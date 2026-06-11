@@ -38,12 +38,11 @@ public class CreatePurchaseOrderDialog extends AppDialog {
     private List<PurchaseOrderDetail> details;
 
     public CreatePurchaseOrderDialog() {
-        super("Nueva Orden de Compra", 620, 520);
+        super("Nueva Orden de Compra", 620, 600);
         details = new ArrayList<>();
         initSupplierPanel();
         initItemPanel();
         initDetailTable();
-        initButtons();
     }
 
     private void initSupplierPanel() {
@@ -99,22 +98,23 @@ public class CreatePurchaseOrderDialog extends AppDialog {
         detailTable = new AppTable(new String[]{"Producto", "Cantidad", "Precio Unit.", "Subtotal"});
         lblTotal = InfoLabel.highlight("Total OC: $ 0.00");
 
-        BorderPanel bottomRow = new BorderPanel();
-        bottomRow.addWest(ButtonBar.danger("Quitar seleccionado", this::removeSelected));
-        bottomRow.addEast(lblTotal);
+        BorderPanel tableActions = new BorderPanel();
+        tableActions.addWest(ButtonBar.danger("Quitar seleccionado", this::removeSelected));
+        tableActions.addEast(lblTotal);
 
         SectionPanel tablePanel = new SectionPanel("Ítems agregados");
         tablePanel.addCenter(detailTable);
-        tablePanel.addSouth(bottomRow);
+        tablePanel.addSouth(tableActions);
 
-        addSouth(tablePanel);
-    }
-
-    private void initButtons() {
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Confirmar Orden", this::confirm);
-        addSouth(bar);
+
+        BorderPanel south = new BorderPanel(0, 4);
+        south.addCenter(tablePanel);
+        south.addSouth(bar);
+
+        addSouth(south);
     }
 
     private void refreshUnitPrice() {

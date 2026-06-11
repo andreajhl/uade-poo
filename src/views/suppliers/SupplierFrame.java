@@ -1,7 +1,9 @@
 package views.suppliers;
 
 import controllers.SupplierController;
+import exceptions.EntityNotFoundException;
 import models.Supplier;
+import views.components.Alerts;
 import views.components.AppButton;
 import views.components.AppFrame;
 import views.components.AppTable;
@@ -14,6 +16,7 @@ public class SupplierFrame extends AppFrame {
 
     private final AppTable table;
     private AppButton btnEdit;
+    private AppButton btnDelete;
     private AppButton btnCertifications;
 
     public SupplierFrame() {
@@ -23,6 +26,7 @@ public class SupplierFrame extends AppFrame {
             if (!e.getValueIsAdjusting()) {
                 boolean selected = table.getSelectedRow() >= 0;
                 btnEdit.setEnabled(selected);
+                btnDelete.setEnabled(selected);
                 btnCertifications.setEnabled(selected);
             }
         });
@@ -36,12 +40,16 @@ public class SupplierFrame extends AppFrame {
         btnEdit = new AppButton("Editar", this::openEditDialog);
         btnEdit.setEnabled(false);
 
+        btnDelete = new AppButton("Eliminar", this::deleteSelected);
+        btnDelete.setEnabled(false);
+
         btnCertifications = new AppButton("Certificados", this::openCertificationsDialog);
         btnCertifications.setEnabled(false);
 
         ToolbarPanel toolbar = new ToolbarPanel();
         toolbar.add(ButtonBar.primary("Nuevo Proveedor", this::openCreateDialog));
         toolbar.add(btnEdit);
+        toolbar.add(btnDelete);
         toolbar.add(btnCertifications);
         addNorth(toolbar);
     }
@@ -64,6 +72,21 @@ public class SupplierFrame extends AppFrame {
         EditSupplierDialog dialog = new EditSupplierDialog(suppliers.get(row));
         dialog.setVisible(true);
         refresh();
+    }
+
+    private void deleteSelected() {
+        int row = table.getSelectedRow();
+        if (row < 0) return;
+        List<Supplier> suppliers = SupplierController.getInstance().findAll();
+        if (row >= suppliers.size()) return;
+        Supplier supplier = suppliers.get(row);
+        if (!Alerts.confirm(this, "¿Eliminar el proveedor \"" + supplier.getRazonSocial() + "\"?", "Confirmar eliminación")) return;
+        try {
+            SupplierController.getInstance().delete(supplier.getId());
+            refresh();
+        } catch (EntityNotFoundException ex) {
+            Alerts.error(this, ex.getMessage());
+        }
     }
 
     private void openCertificationsDialog() {

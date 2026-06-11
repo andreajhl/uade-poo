@@ -69,8 +69,9 @@ public class DataLoader {
                     ),
                     user.getId());
 
-            var nd = VoucherController.getInstance().registerDebitNote(
+            var factura = VoucherController.getInstance().registerInvoice(
                     distmed.getId(),
+                    VoucherType.FACTURA_A,
                     LocalDate.of(2026, 5, 10),
                     List.of(
                             new VoucherDetail(guantes, 100, 150f),
@@ -78,15 +79,13 @@ public class DataLoader {
                     ),
                     oc1.getId());
 
-            VoucherController.getInstance().registerInvoice(
+            VoucherController.getInstance().registerDebitNote(
                     distmed.getId(),
-                    VoucherType.FACTURA_A,
                     LocalDate.of(2026, 5, 15),
                     List.of(
-                            new VoucherDetail(guantes, 100, 150f),
-                            new VoucherDetail(ibuprofeno, 50, 450f)
+                            new VoucherDetail(guantes, 5, 150f)
                     ),
-                    nd.getId());
+                    factura.getId());
 
         } catch (Exception e) {
             System.err.println("DataLoader: error al precargar datos — " + e.getMessage());

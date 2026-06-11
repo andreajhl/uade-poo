@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import models.PaymentItem;
 import models.PaymentOrder;
 import models.Retention;
 import models.Supplier;
@@ -37,7 +38,8 @@ public class PaymentOrderController {
     public PaymentOrder createPaymentOrder(
             UUID supplierId,
             List<VoucherPayment> voucherPayments,
-            UUID userId) throws EntityNotFoundException, InvalidVoucherStatusException {
+            UUID userId,
+            List<PaymentItem> paymentItems) throws EntityNotFoundException, InvalidVoucherStatusException {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
 
@@ -53,6 +55,8 @@ public class PaymentOrderController {
         }
 
         applyRetentions(order);
+
+        for (PaymentItem item : paymentItems) order.addPaymentItem(item);
 
         paymentOrders.put(order.getId(), order);
 

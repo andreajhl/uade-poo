@@ -44,6 +44,12 @@ public class AppTable extends JPanel {
         return model.getValueAt(row, col);
     }
 
+    public void onRowSelected(Runnable callback) {
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) callback.run();
+        });
+    }
+
     public JTable getTable() {
         return table;
     }

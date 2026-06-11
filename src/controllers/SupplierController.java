@@ -61,6 +61,7 @@ public class SupplierController {
         for (var po : PaymentOrderController.getInstance().findBySupplier(supplierId)) {
             debt -= po.getTotalVouchersAmount();
         }
+        debt -= VoucherController.getInstance().getTotalCreditNoteAmount(supplierId);
         return Math.max(0f, debt);
     }
 

@@ -15,7 +15,7 @@ public class PaymentOrderFrame extends AppFrame {
 
     public PaymentOrderFrame() {
         table = new AppTable(new String[]{
-            "N°", "Fecha", "Proveedor", "Total Facturas", "Retenciones", "Neto", "Estado"
+            "N°", "Fecha", "Proveedor", "Total Facturas", "Retenciones", "Neto"
         });
         initToolbar();
         addCenter(table);
@@ -45,8 +45,7 @@ public class PaymentOrderFrame extends AppFrame {
                 order.getSupplier().getRazonSocial(),
                 String.format("$ %.2f", order.getTotalVouchersAmount()),
                 String.format("$ %.2f", order.getTotalRetained()),
-                String.format("$ %.2f", order.getNetAmount()),
-                order.getStatus().name()
+                String.format("$ %.2f", order.getNetAmount())
             });
         }
     }

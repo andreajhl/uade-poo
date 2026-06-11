@@ -1,7 +1,5 @@
 package models;
 
-import models.enums.PaymentOrderStatus;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +17,7 @@ public class PaymentOrder {
     private float totalRetained;
     private float netAmount;
     private UUID issuedBy;
-    private PaymentOrderStatus status;
+    private List<PaymentItem> paymentItems;
 
     public PaymentOrder(int number, Supplier supplier, UUID issuedBy) {
         this.id = UUID.randomUUID();
@@ -29,15 +27,23 @@ public class PaymentOrder {
         this.issuedBy = issuedBy;
         this.voucherPayments = new ArrayList<>();
         this.retentions = new ArrayList<>();
+        this.paymentItems = new ArrayList<>();
         this.totalVouchersAmount = 0f;
         this.totalRetained = 0f;
         this.netAmount = 0f;
-        this.status = PaymentOrderStatus.PENDING;
     }
 
     public void addVoucherPayment(VoucherPayment voucherPayment) {
         voucherPayments.add(voucherPayment);
         calculateTotals();
+    }
+
+    public void addPaymentItem(PaymentItem item) {
+        paymentItems.add(item);
+    }
+
+    public List<PaymentItem> getPaymentItems() {
+        return paymentItems;
     }
 
     public void addRetention(Retention retention) {
@@ -99,10 +105,6 @@ public class PaymentOrder {
         return issuedBy;
     }
 
-    public PaymentOrderStatus getStatus() {
-        return status;
-    }
-
     public void setNumber(int number) {
         this.number = number;
     }
@@ -113,10 +115,6 @@ public class PaymentOrder {
 
     public void setSupplier(Supplier supplier) {
         this.supplier = supplier;
-    }
-
-    public void setStatus(PaymentOrderStatus status) {
-        this.status = status;
     }
 
     @Override

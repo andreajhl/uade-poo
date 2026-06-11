@@ -53,7 +53,7 @@ public class PaymentOrdersSummaryReport extends AppFrame {
 
     private void initTable() {
         table = new AppTable(new String[]{
-            "N° Orden", "Fecha", "Proveedor", "Total Facturas", "Retenciones", "Neto Pagado", "Estado"
+            "N° Orden", "Fecha", "Proveedor", "Total Facturas", "Retenciones", "Neto Pagado"
         });
         lblTotals = InfoLabel.highlight("Total: $ 0.00  |  Retenciones: $ 0.00");
 
@@ -114,8 +114,7 @@ public class PaymentOrdersSummaryReport extends AppFrame {
                 order.getSupplier().getRazonSocial(),
                 String.format("$ %.2f", order.getTotalVouchersAmount()),
                 String.format("$ %.2f", order.getTotalRetained()),
-                String.format("$ %.2f", order.getNetAmount()),
-                order.getStatus().name()
+                String.format("$ %.2f", order.getNetAmount())
             });
 
             totalPayments += order.getTotalVouchersAmount();

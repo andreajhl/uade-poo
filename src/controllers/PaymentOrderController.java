@@ -72,7 +72,9 @@ public class PaymentOrderController {
                         : VoucherStatus.PARTIALLY_PAID
                 );
 
-            } catch (EntityNotFoundException ignored) {}
+            } catch (EntityNotFoundException ex) {
+                System.err.println("updateVoucherStatuses: voucher not found after validation — " + ex.getMessage());
+            }
         }
     }
 

@@ -192,7 +192,9 @@ public class CreateSupplierDialog extends AppDialog {
         for (Category cat : selectedCategories) {
             try {
                 SupplierController.getInstance().addCategory(supplierId, cat);
-            } catch (Exception ignored) {}
+            } catch (Exception ex) {
+                System.err.println("addCategory failed for new supplier — " + ex.getMessage());
+            }
         }
 
         Alerts.info(this, "Proveedor creado correctamente.");

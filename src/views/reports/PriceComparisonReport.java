@@ -70,7 +70,9 @@ public class PriceComparisonReport extends AppFrame {
                 Supplier s = SupplierController.getInstance().findById(ps.getSupplierId());
                 supplierName = s.getRazonSocial();
                 cuit = s.getCuit();
-            } catch (EntityNotFoundException ignored) {}
+            } catch (EntityNotFoundException ex) {
+                System.err.println("PriceComparisonReport: supplier not found for id " + ps.getSupplierId() + " — " + ex.getMessage());
+            }
 
             table.addRow(new Object[]{
                 supplierName,

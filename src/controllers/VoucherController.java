@@ -31,15 +31,15 @@ public class VoucherController {
     }
 
     public Voucher registerDebitNote(UUID supplierId, LocalDate issueDate,
-                                     List<VoucherDetail> details, UUID relatedOrderId)
+                                     List<VoucherDetail> details, UUID relatedInvoiceId)
             throws EntityNotFoundException {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
+        Voucher relatedInvoice = findById(relatedInvoiceId);
+
         Voucher voucher = new Voucher(nextNumber, VoucherType.NOTA_DEBITO, issueDate, supplier);
-
         for (VoucherDetail d : details) voucher.addDetail(d);
-
-        voucher.addRelatedOrder(PurchaseOrderController.getInstance().findById(relatedOrderId));
+        voucher.setRelatedDebitNote(relatedInvoice);
         vouchers.put(voucher.getId(), voucher);
 
         nextNumber++;
@@ -47,20 +47,18 @@ public class VoucherController {
     }
 
     public Voucher registerInvoice(UUID supplierId, VoucherType type, LocalDate issueDate,
-                                    List<VoucherDetail> details, UUID relatedDebitNoteId)
+                                    List<VoucherDetail> details, UUID relatedOrderId)
             throws EntityNotFoundException, VoucherDeviationException {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
-        Voucher debitNote = findById(relatedDebitNoteId);
 
         Voucher voucher = new Voucher(nextNumber, type, issueDate, supplier);
         for (VoucherDetail d : details) voucher.addDetail(d);
-        voucher.setRelatedDebitNote(debitNote);
-        for (var oc : debitNote.getRelatedOrders()) voucher.addRelatedOrder(oc);
+        voucher.addRelatedOrder(PurchaseOrderController.getInstance().findById(relatedOrderId));
 
         if (voucher.hasPriceDeviation()) {
             throw new VoucherDeviationException(
-                    "Se detectaron diferencias de precio respecto a la nota de débito. Se requiere autorización.");
+                    "Se detectaron diferencias de precio respecto a la orden de compra. Se requiere autorización.");
         }
 
         vouchers.put(voucher.getId(), voucher);
@@ -69,30 +67,20 @@ public class VoucherController {
     }
 
     public Voucher registerInvoiceWithAuthorization(UUID supplierId, VoucherType type, LocalDate issueDate,
-                                                     List<VoucherDetail> details, UUID relatedDebitNoteId,
+                                                     List<VoucherDetail> details, UUID relatedOrderId,
                                                      Authorization authorization)
             throws EntityNotFoundException {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
-        Voucher debitNote = findById(relatedDebitNoteId);
 
         Voucher voucher = new Voucher(nextNumber, type, issueDate, supplier);
         for (VoucherDetail d : details) voucher.addDetail(d);
-        voucher.setRelatedDebitNote(debitNote);
-        for (var oc : debitNote.getRelatedOrders()) voucher.addRelatedOrder(oc);
+        voucher.addRelatedOrder(PurchaseOrderController.getInstance().findById(relatedOrderId));
         voucher.setAuthorization(authorization);
 
         vouchers.put(voucher.getId(), voucher);
         nextNumber++;
         return voucher;
-    }
-
-    public List<Voucher> findDebitNotesBySupplier(UUID supplierId) {
-        List<Voucher> result = new ArrayList<>();
-        for (Voucher v : findBySupplier(supplierId)) {
-            if (v.getType() == VoucherType.NOTA_DEBITO) result.add(v);
-        }
-        return result;
     }
 
     public List<Voucher> findAll() {

@@ -6,6 +6,7 @@ import controllers.TaxRuleController;
 import controllers.UserController;
 import controllers.VoucherController;
 import exceptions.EntityNotFoundException;
+import exceptions.InvalidVoucherStatusException;
 import models.Supplier;
 import models.TaxRule;
 import models.User;
@@ -175,7 +176,7 @@ public class CreatePaymentOrderDialog extends AppDialog {
             PaymentOrderController.getInstance().createPaymentOrder(supplier.getId(), payments, currentUser.getId());
             Alerts.info(this, "Orden de pago creada correctamente.");
             dispose();
-        } catch (EntityNotFoundException ex) {
+        } catch (EntityNotFoundException | InvalidVoucherStatusException ex) {
             Alerts.error(this, ex.getMessage());
         }
     }

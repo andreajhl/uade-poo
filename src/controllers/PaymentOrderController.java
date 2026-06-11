@@ -1,6 +1,8 @@
 package controllers;
 
 import exceptions.EntityNotFoundException;
+import exceptions.InvalidVoucherStatusException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +37,7 @@ public class PaymentOrderController {
     public PaymentOrder createPaymentOrder(
             UUID supplierId,
             List<VoucherPayment> voucherPayments,
-            UUID userId) throws EntityNotFoundException {
+            UUID userId) throws EntityNotFoundException, InvalidVoucherStatusException {
 
         Supplier supplier = SupplierController.getInstance().findById(supplierId);
 
@@ -74,12 +76,13 @@ public class PaymentOrderController {
         }
     }
 
-    private void validateVoucherForPayment(Voucher voucher) throws EntityNotFoundException {
+    private void validateVoucherForPayment(Voucher voucher) throws EntityNotFoundException, InvalidVoucherStatusException {
         if (!isPayableType(voucher.getType())) {
             throw new EntityNotFoundException("Comprobante inválido", voucher.getId());
         }
         if (voucher.getStatus() != VoucherStatus.PENDING) {
-            throw new EntityNotFoundException("Comprobante no pendiente", voucher.getId());
+            throw new InvalidVoucherStatusException(
+                "El comprobante N°" + voucher.getNumber() + " no está en estado pendiente.");
         }
     }
 
@@ -92,15 +95,14 @@ public class PaymentOrderController {
 
     private void applyRetentions(PaymentOrder order) {
         List<TaxRule> taxRules = TaxRuleController.getInstance().getAllTaxRules();
-
         float baseAmount = order.getTotalVouchersAmount();
+        LocalDate issueDate = order.getIssueDate();
 
         for (TaxRule rule : taxRules) {
+            if (order.getSupplier().hasValidCertificationFor(rule.getTaxType(), issueDate)) continue;
             float retentionAmount = rule.calculateRetention(baseAmount);
-
             if (retentionAmount > 0) {
-                Retention retention = new Retention(rule.getTaxType(), retentionAmount);
-                order.addRetention(retention);
+                order.addRetention(new Retention(rule.getTaxType(), retentionAmount));
             }
         }
     }

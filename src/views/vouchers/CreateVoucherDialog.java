@@ -86,7 +86,7 @@ public class CreateVoucherDialog extends AppDialog {
         form.addRow("Tipo *", cmbType);
         form.addRow("Fecha *", txtDate);
         form.addRow("OC asociada *", pnlOCRef);
-        form.addRow("Nota de Débito *", pnlNDRef);
+        form.addRow("Factura asociada *", pnlNDRef);
 
         refreshOCCombo();
         refreshNDCombo();
@@ -147,8 +147,8 @@ public class CreateVoucherDialog extends AppDialog {
                 || type == VoucherType.FACTURA_B
                 || type == VoucherType.FACTURA_C;
 
-        pnlOCRef.setVisible(isND);
-        pnlNDRef.setVisible(isInvoice);
+        pnlOCRef.setVisible(isInvoice);
+        pnlNDRef.setVisible(isND);
     }
 
     private void onSupplierChanged() {
@@ -170,8 +170,8 @@ public class CreateVoucherDialog extends AppDialog {
         Supplier supplier = cmbSupplier.getSelected();
         cmbRelatedND.removeAllItems();
         if (supplier == null) return;
-        for (Voucher nd : VoucherController.getInstance().findDebitNotesBySupplier(supplier.getId())) {
-            cmbRelatedND.addItem(nd);
+        for (Voucher invoice : VoucherController.getInstance().findInvoices(supplier.getId(), null, null)) {
+            cmbRelatedND.addItem(invoice);
         }
     }
 
@@ -288,14 +288,14 @@ public class CreateVoucherDialog extends AppDialog {
                 || type == VoucherType.FACTURA_C;
 
         if (type == VoucherType.NOTA_DEBITO) {
-            PurchaseOrder oc = cmbRelatedOC.getSelected();
-            if (oc == null) {
-                Alerts.warn(this, "La Nota de Débito debe estar asociada a una Orden de Compra.");
+            Voucher invoice = cmbRelatedND.getSelected();
+            if (invoice == null) {
+                Alerts.warn(this, "La Nota de Débito debe estar asociada a una Factura.");
                 return;
             }
             try {
                 VoucherController.getInstance().registerDebitNote(
-                        supplier.getId(), issueDate, details, oc.getId());
+                        supplier.getId(), issueDate, details, invoice.getId());
                 Alerts.info(this, "Nota de Débito registrada correctamente.");
                 dispose();
             } catch (EntityNotFoundException ex) {
@@ -305,15 +305,15 @@ public class CreateVoucherDialog extends AppDialog {
         }
 
         if (isInvoice) {
-            Voucher nd = cmbRelatedND.getSelected();
-            if (nd == null) {
-                Alerts.warn(this, "La Factura debe originarse a partir de una Nota de Débito.");
+            PurchaseOrder oc = cmbRelatedOC.getSelected();
+            if (oc == null) {
+                Alerts.warn(this, "La Factura debe estar asociada a una Orden de Compra.");
                 return;
             }
-            UUID ndId = nd.getId();
+            UUID ocId = oc.getId();
             try {
                 VoucherController.getInstance().registerInvoice(
-                        supplier.getId(), type, issueDate, details, ndId);
+                        supplier.getId(), type, issueDate, details, ocId);
                 Alerts.info(this, "Factura registrada correctamente.");
                 dispose();
 
@@ -329,7 +329,7 @@ public class CreateVoucherDialog extends AppDialog {
 
                 try {
                     VoucherController.getInstance().registerInvoiceWithAuthorization(
-                            supplier.getId(), type, issueDate, details, ndId, approval.getAuthorization());
+                            supplier.getId(), type, issueDate, details, ocId, approval.getAuthorization());
                     Alerts.info(this, "Factura registrada con autorización.");
                     dispose();
                 } catch (EntityNotFoundException e) {

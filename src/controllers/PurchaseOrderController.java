@@ -74,7 +74,10 @@ public class PurchaseOrderController {
         for (PurchaseOrder order : purchaseOrders.values()) {
             if (order.getSupplier().getId().equals(supplierId)) debt += order.getTotal();
         }
-        return debt;
+        for (var po : PaymentOrderController.getInstance().findBySupplier(supplierId)) {
+            debt -= po.getTotalVouchersAmount();
+        }
+        return Math.max(0f, debt);
     }
 
     public List<PurchaseOrder> findBySupplier(UUID supplierId) {

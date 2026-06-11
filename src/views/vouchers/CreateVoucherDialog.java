@@ -142,13 +142,14 @@ public class CreateVoucherDialog extends AppDialog {
     private void onTypeChanged() {
         if (pnlOCRef == null || pnlNDRef == null) return;
         VoucherType type = cmbType.getSelected();
-        boolean isND = type == VoucherType.NOTA_DEBITO;
         boolean isInvoice = type == VoucherType.FACTURA_A
                 || type == VoucherType.FACTURA_B
                 || type == VoucherType.FACTURA_C;
+        boolean referencesInvoice = type == VoucherType.NOTA_DEBITO
+                || type == VoucherType.NOTA_CREDITO;
 
         pnlOCRef.setVisible(isInvoice);
-        pnlNDRef.setVisible(isND);
+        pnlNDRef.setVisible(referencesInvoice);
     }
 
     private void onSupplierChanged() {
@@ -266,10 +267,6 @@ public class CreateVoucherDialog extends AppDialog {
 
         VoucherType type = cmbType.getSelected();
 
-        if (type == VoucherType.NOTA_CREDITO) {
-            Alerts.warn(this, "La Nota de Crédito requiere una Orden de Pago. Funcionalidad disponible próximamente.");
-            return;
-        }
 
         LocalDate issueDate;
         try {
@@ -287,16 +284,23 @@ public class CreateVoucherDialog extends AppDialog {
                 || type == VoucherType.FACTURA_B
                 || type == VoucherType.FACTURA_C;
 
-        if (type == VoucherType.NOTA_DEBITO) {
+        if (type == VoucherType.NOTA_DEBITO || type == VoucherType.NOTA_CREDITO) {
             Voucher invoice = cmbRelatedND.getSelected();
             if (invoice == null) {
-                Alerts.warn(this, "La Nota de Débito debe estar asociada a una Factura.");
+                String label = type == VoucherType.NOTA_DEBITO ? "Nota de Débito" : "Nota de Crédito";
+                Alerts.warn(this, "La " + label + " debe estar asociada a una Factura.");
                 return;
             }
             try {
-                VoucherController.getInstance().registerDebitNote(
-                        supplier.getId(), issueDate, details, invoice.getId());
-                Alerts.info(this, "Nota de Débito registrada correctamente.");
+                if (type == VoucherType.NOTA_DEBITO) {
+                    VoucherController.getInstance().registerDebitNote(
+                            supplier.getId(), issueDate, details, invoice.getId());
+                    Alerts.info(this, "Nota de Débito registrada correctamente.");
+                } else {
+                    VoucherController.getInstance().registerCreditNote(
+                            supplier.getId(), issueDate, details, invoice.getId());
+                    Alerts.info(this, "Nota de Crédito registrada correctamente.");
+                }
                 dispose();
             } catch (EntityNotFoundException ex) {
                 Alerts.error(this, ex.getMessage());

@@ -46,6 +46,22 @@ public class VoucherController {
         return voucher;
     }
 
+    public Voucher registerCreditNote(UUID supplierId, LocalDate issueDate,
+                                      List<VoucherDetail> details, UUID relatedInvoiceId)
+            throws EntityNotFoundException {
+
+        Supplier supplier = SupplierController.getInstance().findById(supplierId);
+        Voucher relatedInvoice = findById(relatedInvoiceId);
+
+        Voucher voucher = new Voucher(nextNumber, VoucherType.NOTA_CREDITO, issueDate, supplier);
+        for (VoucherDetail d : details) voucher.addDetail(d);
+        voucher.setRelatedDebitNote(relatedInvoice);
+        vouchers.put(voucher.getId(), voucher);
+
+        nextNumber++;
+        return voucher;
+    }
+
     public Voucher registerInvoice(UUID supplierId, VoucherType type, LocalDate issueDate,
                                     List<VoucherDetail> details, UUID relatedOrderId)
             throws EntityNotFoundException, VoucherDeviationException {
@@ -81,6 +97,14 @@ public class VoucherController {
         vouchers.put(voucher.getId(), voucher);
         nextNumber++;
         return voucher;
+    }
+
+    public float getTotalCreditNoteAmount(UUID supplierId) {
+        float total = 0f;
+        for (Voucher v : findBySupplier(supplierId)) {
+            if (v.getType() == VoucherType.NOTA_CREDITO) total += v.getGrossTotal();
+        }
+        return total;
     }
 
     public List<Voucher> findAll() {

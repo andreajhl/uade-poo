@@ -1,0 +1,49 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(javac:*)",
+      "Bash(java:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Read(./**)",
+      "Write(./src/**)",
+      "Edit(./src/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push:*)",
+      "Write(./.claude/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATHS\" | grep -q '\\.java$'; then for f in $CLAUDE_FILE_PATHS; do if grep -nE '^\\s*//|/\\*' \"$f\" > /dev/null 2>&1; then echo \"⚠️  WARNING: Comments detected in $f — code must have no comments. Review and remove.\"; fi; if grep -nE '\\b(proveedor|usuario|orden|comprobante|factura|pago|cheque|impuesto|nombre|cantidad|fecha|estado)\\b' \"$f\" > /dev/null 2>&1; then echo \"⚠️  WARNING: Spanish identifiers detected in $f — code must be in English (Spanish allowed only in user-facing strings).\"; fi; done; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$(git status --porcelain 2>/dev/null)\" ]; then echo '📝 You have uncommitted changes. Consider committing the completed item before moving on.'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

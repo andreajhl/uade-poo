@@ -72,6 +72,11 @@ public class VoucherController {
         for (VoucherDetail d : details) voucher.addDetail(d);
         voucher.addRelatedOrder(PurchaseOrderController.getInstance().findById(relatedOrderId));
 
+        if (voucher.hasProductNotInOrder()) {
+            throw new VoucherDeviationException(
+                    "La factura contiene productos que no figuran en la orden de compra. Se requiere autorización.");
+        }
+
         if (voucher.hasPriceDeviation()) {
             throw new VoucherDeviationException(
                     "Se detectaron diferencias de precio respecto a la orden de compra. Se requiere autorización.");

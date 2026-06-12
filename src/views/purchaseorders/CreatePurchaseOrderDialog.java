@@ -38,22 +38,44 @@ public class CreatePurchaseOrderDialog extends AppDialog {
     private List<PurchaseOrderDetail> details;
 
     public CreatePurchaseOrderDialog() {
-        super("Nueva Orden de Compra", 620, 520);
+        super("Nueva Orden de Compra", 620, 600);
         details = new ArrayList<>();
         initSupplierPanel();
         initItemPanel();
         initDetailTable();
-        initButtons();
     }
 
     private void initSupplierPanel() {
         cmbSupplier = new AppComboBox<>();
         for (Supplier s : SupplierController.getInstance().findAll()) cmbSupplier.addItem(s);
-        cmbSupplier.onSelectionChanged(this::onSupplierChanged);
 
-        FormPanel form = new FormPanel("Proveedor");
-        form.addRow("Proveedor:", cmbSupplier);
-        addNorth(form);
+        cmbProduct = new AppComboBox<>();
+        cmbProduct.onSelectionChanged(this::refreshUnitPrice);
+
+        txtQuantity = new AppTextField("1");
+        txtUnitPrice = new AppTextField("0.00");
+        lblItemSubtotal = new InfoLabel("$ 0.00");
+        txtQuantity.onTextChanged(this::refreshItemSubtotal);
+        txtUnitPrice.onTextChanged(this::refreshItemSubtotal);
+
+        FormPanel supplierForm = new FormPanel("Proveedor");
+        supplierForm.addRow("Proveedor:", cmbSupplier);
+
+        FormPanel itemForm = new FormPanel("Agregar ítem");
+        itemForm.addRow("Producto:", cmbProduct);
+        itemForm.addRow("Cantidad:", txtQuantity);
+        itemForm.addRow("Precio unitario:", txtUnitPrice);
+        itemForm.addRow("Subtotal ítem:", lblItemSubtotal);
+        itemForm.addFullRow(ButtonBar.primary("Agregar ítem", this::addDetail));
+
+        BorderPanel north = new BorderPanel(0, 4);
+        north.addNorth(supplierForm);
+        north.addCenter(itemForm);
+        addNorth(north);
+
+        cmbSupplier.onSelectionChanged(this::onSupplierChanged);
+        refreshProductList();
+        refreshUnitPrice();
     }
 
     private void onSupplierChanged() {
@@ -72,45 +94,22 @@ public class CreatePurchaseOrderDialog extends AppDialog {
         }
     }
 
-    private void initItemPanel() {
-        cmbProduct = new AppComboBox<>();
-        cmbProduct.onSelectionChanged(this::refreshUnitPrice);
-
-        txtQuantity = new AppTextField("1");
-        txtUnitPrice = new AppTextField("0.00");
-        lblItemSubtotal = new InfoLabel("$ 0.00");
-
-        txtQuantity.onTextChanged(this::refreshItemSubtotal);
-        txtUnitPrice.onTextChanged(this::refreshItemSubtotal);
-
-        FormPanel form = new FormPanel("Agregar ítem");
-        form.addRow("Producto:", cmbProduct);
-        form.addRow("Cantidad:", txtQuantity);
-        form.addRow("Precio unitario:", txtUnitPrice);
-        form.addRow("Subtotal ítem:", lblItemSubtotal);
-        form.addFullRow(ButtonBar.primary("Agregar ítem", this::addDetail));
-
-        addCenter(form);
-        refreshProductList();
-        refreshUnitPrice();
-    }
+    private void initItemPanel() {}
 
     private void initDetailTable() {
         detailTable = new AppTable(new String[]{"Producto", "Cantidad", "Precio Unit.", "Subtotal"});
         lblTotal = InfoLabel.highlight("Total OC: $ 0.00");
 
-        BorderPanel bottomRow = new BorderPanel();
-        bottomRow.addWest(ButtonBar.danger("Quitar seleccionado", this::removeSelected));
-        bottomRow.addEast(lblTotal);
+        BorderPanel tableActions = new BorderPanel();
+        tableActions.addWest(ButtonBar.danger("Quitar seleccionado", this::removeSelected));
+        tableActions.addEast(lblTotal);
 
         SectionPanel tablePanel = new SectionPanel("Ítems agregados");
         tablePanel.addCenter(detailTable);
-        tablePanel.addSouth(bottomRow);
+        tablePanel.addSouth(tableActions);
 
-        addSouth(tablePanel);
-    }
+        addCenter(tablePanel);
 
-    private void initButtons() {
         ButtonBar bar = new ButtonBar();
         bar.addButton("Cancelar", this::dispose);
         bar.addButton("Confirmar Orden", this::confirm);

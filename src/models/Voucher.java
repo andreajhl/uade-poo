@@ -71,6 +71,22 @@ public class Voucher {
         return false;
     }
 
+    public boolean hasProductNotInOrder() {
+        for (PurchaseOrder oc : relatedOrders) {
+            for (VoucherDetail vd : details) {
+                boolean found = false;
+                for (PurchaseOrderDetail ocd : oc.getDetails()) {
+                    if (ocd.getProduct().getId().equals(vd.getProduct().getId())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) return true;
+            }
+        }
+        return false;
+    }
+
     public UUID getId() { return id; }
 
     public int getNumber() { return number; }
